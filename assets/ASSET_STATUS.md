@@ -50,6 +50,20 @@ Barrel, Crate, Watertower, Traincar, Stagecoach and cacti around the station.
 | LobbyLamp | 1.5 × 10 × 1.5 | 107570775533141 | LobbyLamp 116556373681543 | 112 | imported (new id) |
 | LobbySteps | 8 × 3 × 6 | 72260182790306 | LobbySteps 130170019305368 | 132 | imported; one at each platform end, Hull = walkable ramp |
 
+## Worm skins (2026-10-18)
+Palette variants for WormHead / WormSegment (same meshes and UVs; the Flesh, FleshDark, plate and eye cells
+are recolored). Source colors: `tools/blender/skins/worm_skins.py` → `assets/textures/skins/*.png`; uploaded as
+Decals; the image ids are in `src/shared/Config/WormSkins.luau`. B textures dress even segments (bands).
+Render: `assets/renders/worm_skins.png`.
+
+| Skin | Unlock | Texture A (image) | Texture B (image) | Decal ids |
+|---|---|---|---|---|
+| Classic | Free | palette 81576212373708 | – | – |
+| Dune | Free | 72328951713999 | – | 88733221188921 |
+| Rattlesnake | Worm Skins Pack | 78479604786065 | 122295198316072 | 75492326466731, 74084866311593 |
+| Bone | Worm Skins Pack | 123227177687544 | – | 109707528129975 |
+| Copper | Worm Skins Pack | 113700087497112 | 109108725796998 | 133976884926654, 78769687878093 |
+
 ## Verified in play (solo)
 - Every item, structure, character and effect spawned in a match is the mesh (0 greyboxes on the map).
 - Items: pickup / hold / bag / throw on SmallCoal, BigCoal, Barrel, Lantern, Crate, Table, Bed, Tumbleweed,

@@ -87,6 +87,7 @@ return {
 	Debug = {
 		Enabled = true,
 		ShowUiSample = false, -- Phase 13: show the UI style sample screen on join
+		UnlockAllCosmetics = true, -- Studio only: every game pass counts as owned (test skins before the passes exist)
 		ShowMarkers = true, -- label every map marker
 		MarkerTransparency = 0.5,
 		LabelMaxDistance = 120,

@@ -21,6 +21,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local Types = require(ReplicatedStorage.Shared.Types)
 local Ground = require(ReplicatedStorage.Shared.Util.Ground)
 local TagDefs = require(ReplicatedStorage.Shared.Util.Tags)
+local WormSkin = require(ReplicatedStorage.Shared.WormSkin)
 local InputController = require(script.Parent.InputController)
 local MatchController = require(script.Parent.MatchController)
 local SettingsController = require(script.Parent.SettingsController)
@@ -82,6 +83,7 @@ local function createVisual(worm: Model, head: BasePart): Visual
 	for index = 1, WormConfig.Segments - 1 do
 		local segment = AssetService.get("WormSegment") -- TODO(asset): WormSegment
 		segment:ScaleTo(WormConfig.SegmentShrink ^ (index - 1))
+		WormSkin.apply(segment, worm:GetAttribute("Skin"), index) -- cosmetic (Config/WormSkins)
 		makeLocalPart(segment)
 		segment:PivotTo(head.CFrame)
 		segment.Parent = fxFolder

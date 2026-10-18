@@ -29,6 +29,11 @@ Rewrite this file at the end of every phase (CLAUDE.md §17).
      worm status + ability slots, ghost), compact layout under 760 px, toasts / kill feed.
   6. Results (banner, escaped / didn't make it, 6 round stats, countdown), Settings (music, SFX, camera
      speed, worm mouth view; session only), Shop (game passes from `Config/Shop`, cosmetic only).
+- **Worm skins (2026-10-18):** 5 skins (Classic + Dune free; Rattlesnake, Bone, Copper in the Worm Skins
+  Pack pass) as palette-texture variants. `CosmeticsService` checks pass ownership server-side
+  (`OwnedPasses` attribute; `Request_SetWormSkin`); WormService dresses the head, each client its segments
+  (`Skin` attribute, `shared/WormSkin`). Lobby Cosmetics window = skin picker with a turning 3D preview.
+  `Debug.UnlockAllCosmetics` (Studio only) unlocks everything for testing. Choice is per session (no saving).
 - Deferred by the spec ("Later"): wormlings, cosmetics, mobile controls, data saving.
 
 ## What each file does (Phase 13 additions; older files are described in their header comments)
@@ -85,6 +90,7 @@ Earlier (still true)
 - Studio's play viewport during the MCP checks was portrait (296–540 px wide), narrower than real phones
   (landscape). Layouts were fixed for it, but check the Device emulator at a landscape phone and 1080p.
 - No real sounds/music/particles/animations (`TODO(asset)`; UI and music ids empty).
+- Worm skins in a real round need a 2P test (solo can't be the Worm). Skins reset on rejoin (no data saving).
 - Results match the local player by DisplayName. Each OpenSafe adds a `Request_SafeCode` limiter (tiny leak).
 - Zipline ends hooked high up drop you at the hit point. Rifle recoil can launch you upward.
 - `ContentId rbxassetid://203785492 ... Asset type does not match` warning on Play — not from our code.

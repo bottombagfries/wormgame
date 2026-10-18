@@ -108,6 +108,30 @@ def build_palette_png():
     return PALETTE_PNG
 
 
+def build_palette_variant(path, overrides):
+    """Writes a copy of the palette with some cells recolored ({"Flesh": "8B6B3E", ...}) to `path`.
+    Worm skins are palette variants: same UVs, different colors."""
+    size = GRID * CELL_PX
+    img = bpy.data.images.new("WT_Palette_variant", size, size, alpha=False)
+    px = [0.0] * (size * size * 4)
+    for i in range(GRID * GRID):
+        name, hexstr = PALETTE[i] if i < len(PALETTE) else ("", "FF00FF")
+        r, g, b = _rgb(overrides.get(name, hexstr))
+        col, row = i % GRID, i // GRID
+        for y in range(CELL_PX):
+            py = size - 1 - (row * CELL_PX + y)
+            for x in range(CELL_PX):
+                p = (py * size + col * CELL_PX + x) * 4
+                px[p : p + 4] = [r, g, b, 1.0]
+    img.pixels[:] = px
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    img.filepath_raw = path
+    img.file_format = "PNG"
+    img.save()
+    bpy.data.images.remove(img)
+    return path
+
+
 def palette_material():
     """The one material every exported mesh uses: the palette texture, nearest filtering."""
     mat = bpy.data.materials.get("WT_Palette")

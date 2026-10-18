@@ -33,6 +33,7 @@ local REMOTES: { [string]: RemoteKind } = {
 	Request_GhostPush = "Event", -- (item: Model, direction: Vector3, charge: number 0..1)
 	Request_SetDifficulty = "Event", -- (name: string) host only, in the lobby
 	Request_SetAfk = "Event", -- (afk: boolean) skip the role roll and stay in the lobby
+	Request_SetWormSkin = "Event", -- (skinId: string) cosmetic; checked against owned passes
 	Request_SelectAbilities = "Event", -- (abilityIds: { string }) worm only, during WormLoadout
 
 	-- Server -> client state

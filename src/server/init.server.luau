@@ -17,6 +17,7 @@ local SERVICE_ORDER = {
 	"StructureService",
 	"ItemService",
 	"PardnerService",
+	"CosmeticsService",
 	"WormService",
 	"DetectionService",
 	"AbilityService",

@@ -10,8 +10,8 @@ local Workspace = game:GetService("Workspace")
 
 local GameConfig = require(ReplicatedStorage.Shared.Config.Game)
 local Net = require(ReplicatedStorage.Shared.Net)
-local Label = require(script.Parent.UI.Components.Label)
 local Modal = require(script.Parent.UI.Components.Modal)
+local CosmeticsScreen = require(script.Parent.UI.CosmeticsScreen)
 local LobbyHud = require(script.Parent.UI.LobbyHud)
 local SettingsScreen = require(script.Parent.UI.SettingsScreen)
 local ShopScreen = require(script.Parent.UI.ShopScreen)
@@ -93,13 +93,6 @@ local function update()
 	)
 end
 
--- A modal with a single line of text (Cosmetics, until cosmetics exist).
-local function placeholder(parent: Instance, name: string, title: string, text: string): Modal.Modal
-	local modal = Modal.new(parent, { name = name, title = title, size = UDim2.fromScale(0.42, 0.4), aspect = 1.4 })
-	Label.new(modal.content, { text = text, maxTextSize = 26 }).TextWrapped = true
-	return modal
-end
-
 function LobbyController.init()
 	local playerGui = player:WaitForChild("PlayerGui")
 	hud = LobbyHud.create(playerGui, {
@@ -121,12 +114,14 @@ function LobbyController.init()
 		end,
 		onDifficulty = cycleDifficulty,
 	})
-	modals.Cosmetics = placeholder(
-		playerGui,
-		"CosmeticsScreen",
-		"COSMETICS",
-		"Hats, trails and worm skins are on their way. Nothing here will ever change how the game plays."
-	)
+	modals.Cosmetics = CosmeticsScreen.create(playerGui, {
+		onEquip = function(skinId: string)
+			Net.event("Request_SetWormSkin"):FireServer(skinId)
+		end,
+		onUnlock = function()
+			openOnly("Shop")
+		end,
+	})
 	modals.Shop = ShopScreen.create(playerGui)
 	modals.Settings = SettingsScreen.create(playerGui, SettingsController.get() :: any, SettingsController.set)
 end

@@ -25,6 +25,8 @@ local Types = require(ReplicatedStorage.Shared.Types)
 local Ground = require(ReplicatedStorage.Shared.Util.Ground)
 local Signal = require(ReplicatedStorage.Shared.Util.Signal)
 local TagDefs = require(ReplicatedStorage.Shared.Util.Tags)
+local WormSkin = require(ReplicatedStorage.Shared.WormSkin)
+local CosmeticsService = require(script.Parent.CosmeticsService)
 local ItemService = require(script.Parent.ItemService)
 local MapService = require(script.Parent.MapService)
 local PardnerService = require(script.Parent.PardnerService)
@@ -598,6 +600,10 @@ function WormService.add(player: Player)
 
 	local model = AssetService.get("WormHead") -- TODO(asset): WormHead
 	model.Name = `Worm_{player.Name}`
+	-- Cosmetic skin: the server dresses the head; every client dresses its own body segments from "Skin".
+	local skin = CosmeticsService.getWormSkin(player)
+	model:SetAttribute("Skin", skin)
+	WormSkin.apply(model, skin, 0)
 	local head = model.PrimaryPart
 	assert(head, "[WormService] WormHead has no PrimaryPart")
 
