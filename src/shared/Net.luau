@@ -31,7 +31,6 @@ local REMOTES: { [string]: RemoteKind } = {
 	Request_Jump = "Event", -- () a ground jump, or a climb-jump while climbing
 	Request_MinigameInput = "Event", -- (arrow)
 	Request_GhostPush = "Event", -- (item: Model, direction: Vector3, charge: number 0..1)
-	Request_Ready = "Event", -- (state: boolean) lobby ready toggle
 	Request_SetDifficulty = "Event", -- (name: string) host only, in the lobby
 	Request_SelectAbilities = "Event", -- (abilityIds: { string }) worm only, during WormLoadout
 

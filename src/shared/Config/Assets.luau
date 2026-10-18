@@ -118,6 +118,20 @@ local Assets: { [string]: AssetDef } = {
 	Skeleton = { folder = "Structures", size = v3(2, 1, 6), color = rgb(235, 230, 215) },
 	TrainKeyhole = { folder = "Structures", size = v3(1.5, 3, 1.5), color = OBJECTIVE },
 
+	-- Lobby train station (Phase 13; layout in Config/Lobby)
+	LobbyGround = {
+		folder = "Structures",
+		size = v3(170, 2, 130),
+		color = rgb(214, 184, 128),
+		material = Enum.Material.Sandstone,
+	},
+	LobbyTrack = { folder = "Structures", size = v3(150, 1, 8), color = RUST },
+	LobbyPlatform = { folder = "Structures", size = v3(96, 3, 16), color = rgb(150, 112, 72) },
+	LobbyDepot = { folder = "Structures", size = v3(40, 18, 14), color = rgb(196, 160, 110) },
+	LobbyBoard = { folder = "Structures", size = v3(22, 13, 1), color = DARK_WOOD },
+	LobbyTicketBooth = { folder = "Structures", size = v3(8, 10, 6), color = rgb(170, 70, 50) },
+	LobbyBench = { folder = "Structures", size = v3(7, 2.5, 2), color = WOOD },
+
 	-- Characters
 	WormHead = { folder = "Characters", size = v3(10, 10, 10), color = WORM, shape = Ball },
 	WormSegment = { folder = "Characters", size = v3(9, 9, 9), color = WORM, shape = Ball },

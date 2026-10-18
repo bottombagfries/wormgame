@@ -12,6 +12,7 @@
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local ServerStorage = game:GetService("ServerStorage")
 local Workspace = game:GetService("Workspace")
 
 local GameConfig = require(ReplicatedStorage.Shared.Config.Game)
@@ -24,6 +25,7 @@ local RandomUtil = require(ReplicatedStorage.Shared.Util.Random)
 local TagDefs = require(ReplicatedStorage.Shared.Util.Tags)
 local Chests = require(script.Parent.Parent.Map.Chests)
 local GreyboxMap = require(script.Parent.Parent.Map.GreyboxMap)
+local Lobby = require(script.Parent.Parent.Map.Lobby)
 local Quarry = require(script.Parent.Parent.Map.Quarry)
 local StructureBuilder = require(script.Parent.Parent.Map.StructureBuilder)
 local VendingMachine = require(script.Parent.Parent.Map.VendingMachine)
@@ -98,26 +100,6 @@ local function spawnTestWall()
 	wall.Material = Enum.Material.Brick
 	wall.Color = Color3.fromRGB(150, 110, 90)
 	wall.Parent = mapFolder
-end
-
--- The lobby spawn next to the Train. Any other SpawnLocation (such as the default one at the origin,
--- under the Train) is switched off for this play session.
-local function setupLobbySpawn()
-	for _, descendant in Workspace:GetDescendants() do
-		if descendant:IsA("SpawnLocation") then
-			descendant.Enabled = false
-		end
-	end
-
-	local trainSpot = MapService.getMarkerCFrames(Tags.TrainSpot, CFrame.identity)[1]
-	local size = GameConfig.TemporarySpawnSize
-	local spawn = Instance.new("SpawnLocation")
-	spawn.Name = "PardnerSpawn"
-	spawn.Size = size
-	spawn.CFrame = trainSpot * CFrame.new(GameConfig.TemporarySpawnOffset + Vector3.new(0, size.Y / 2, 0))
-	spawn.Anchored = true
-	spawn.Neutral = true
-	spawn.Parent = mapFolder
 end
 
 -- Population helpers ----------------------------------------------------------------------------
@@ -445,7 +427,28 @@ function MapService.init()
 		print(`[MapService] Workspace/{MAP_FOLDER} is empty - building the greybox map`)
 		GreyboxMap.build(mapFolder)
 	end
-	setupLobbySpawn()
+	Lobby.build()
+end
+
+-- Where Pardners start when Debug.SpawnAtTrain is on: beside the Train instead of at the ranches.
+function MapService.getTrainSpawn(): CFrame
+	local trainSpot = MapService.getMarkerCFrames(Tags.TrainSpot, CFrame.identity)[1]
+	return trainSpot * CFrame.new(GameConfig.TemporarySpawnOffset + Vector3.new(0, Structures.Ranch.SpawnHeight, 0))
+end
+
+-- Phase 13: the map only exists in the Workspace during a round. Between rounds the template (terrain
+-- parts, markers) waits in ServerStorage and the runtime folder is destroyed, so nothing is left behind.
+function MapService.loadMap()
+	mapFolder.Parent = Workspace
+end
+
+function MapService.unloadMap()
+	MapService.clearRuntime()
+	mapFolder.Parent = ServerStorage
+end
+
+function MapService.isMapLoaded(): boolean
+	return mapFolder.Parent == Workspace
 end
 
 function MapService.start()

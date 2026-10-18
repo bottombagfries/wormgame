@@ -8,6 +8,7 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local GameConfig = require(ReplicatedStorage.Shared.Config.Game)
+local LobbyConfig = require(ReplicatedStorage.Shared.Config.Lobby)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Types = require(ReplicatedStorage.Shared.Types)
 local Signal = require(ReplicatedStorage.Shared.Util.Signal)
@@ -32,8 +33,8 @@ local state: Types.MatchState = {
 	difficulty = GameConfig.DefaultDifficulty,
 	hostUserId = 0,
 	playerCount = 0,
-	readyCount = 0,
-	minPlayers = GameConfig.MinPlayers,
+	activeCount = 0,
+	minPlayers = LobbyConfig.MinPlayers,
 }
 
 local lobby: LobbyScreen.Screen
@@ -47,13 +48,14 @@ end
 
 local function updateLobby()
 	local subtitle
-	if state.playerCount < state.minPlayers then
-		subtitle = `Waiting for players ({state.playerCount}/{state.minPlayers})`
+	if state.phase == "Lobby" then
+		subtitle = `Waiting for players ({state.activeCount}/{state.minPlayers})`
+	elseif state.phase == "Intermission" then
+		subtitle = `Next round in {secondsLeft()}s`
 	else
-		subtitle = `Match starts in {secondsLeft()}s   ({state.readyCount}/{state.playerCount} ready)`
+		subtitle = "Round in progress - you'll play the next one"
 	end
 	lobby.setText("LOBBY", subtitle)
-	lobby.setReady(player:GetAttribute("Ready") == true)
 	lobby.setDifficulty(state.difficulty, state.hostUserId == player.UserId)
 end
 
@@ -83,11 +85,13 @@ end
 
 local function update()
 	local phase = state.phase
-	lobby.setVisible(phase == "Lobby")
-	if phase == "Lobby" then
+	-- Anyone not in the round (late joiners, AFK) sees the lobby panel the whole time.
+	local inLobby = phase == "Lobby" or phase == "Intermission" or MatchController.getRole() == "None"
+	lobby.setVisible(inLobby and phase ~= "Ending")
+	if inLobby then
 		updateLobby()
 	end
-	if phase == "RoleAssign" or phase == "WormLoadout" then
+	if (phase == "RoleAssign" or phase == "WormLoadout") and MatchController.getRole() ~= "None" then
 		updateLoadout()
 	else
 		loadout.hide()
@@ -156,9 +160,6 @@ end
 function MatchController.init()
 	local playerGui = player:WaitForChild("PlayerGui")
 	lobby = LobbyScreen.create(playerGui, {
-		onReady = function()
-			Net.event("Request_Ready"):FireServer(player:GetAttribute("Ready") ~= true)
-		end,
 		onDifficulty = cycleDifficulty,
 	})
 	loadout = LoadoutScreen.create(playerGui, function(ids: { string })

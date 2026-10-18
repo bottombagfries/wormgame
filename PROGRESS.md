@@ -1,6 +1,6 @@
 # PROGRESS
 
-Last updated: 2026-10-17 (Phase 13 step 1 — UI theme + components, awaiting style approval). Rewrite this
+Last updated: 2026-10-18 (Phase 13 — Lobby & UI overhaul in progress). Rewrite this
 file at the end of every phase (CLAUDE.md §17).
 
 ## Phases completed
@@ -37,7 +37,14 @@ file at the end of every phase (CLAUDE.md §17).
     banner, popIn), Button (hover 1.05 / press 0.95, click/hover/error sounds, disabled state), Bar (ghost
     fill, locked cap, pulse), Slot (key hint, selected stroke, cooldown overlay + seconds).
     `UI/StyleSample.luau` shows them all when `Config.Game.Debug.ShowUiSample = true`. Capture:
-    `assets/renders/ui_style_sample.jpg` (checked at the ~540×710 Studio viewport = phone-ish).
+    `assets/renders/ui_style_sample.jpg` (checked at the ~540×710 Studio viewport = phone-ish). Approved.
+  - Step 2 done: round loop on one server — Lobby (waiting, needs `Config.Lobby.MinPlayers` non-AFK) →
+    Intermission (20 s) → RoleAssign (map loaded) → WormLoadout → Playing (Pardners teleported) → Ending →
+    back to the lobby. `Map/Lobby.luau` builds the station at `Config.Lobby.Origin` (0,0,3000) from
+    AssetService ids `Lobby*` + barrel/crate/cacti, spawn pads, invisible walls, departures board
+    (SurfaceGui: countdown / waiting / in progress + last result). The map template and Train sit in
+    ServerStorage between rounds (`MapService.loadMap/unloadMap`, `TrainService.setActive`); runtime is
+    destroyed. Ready button removed (MM2-style countdown only). Only round players are teleported/returned.
 - Deferred by the spec ("Later"): wormlings, cosmetics, mobile controls, data saving.
 
 ## What each file does

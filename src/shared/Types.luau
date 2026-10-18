@@ -196,10 +196,11 @@ export type MatchState = {
 	night: boolean,
 	difficulty: string,
 	hostUserId: number,
-	playerCount: number,
-	readyCount: number,
-	minPlayers: number,
+	playerCount: number, -- everyone in the server
+	activeCount: number, -- players not AFK (the ones who can be picked for a round)
+	minPlayers: number, -- active players needed to start the intermission
 	result: MatchResult?, -- only while Ending
+	lastResult: string?, -- one line about the previous round, for the lobby
 }
 
 -- One line of the objective checklist (State_Objectives payload is a list of these).
@@ -232,7 +233,7 @@ export type MatchResult = {
 	dead: { string },
 }
 
-export type MatchPhase = "Lobby" | "RoleAssign" | "WormLoadout" | "Playing" | "Ending"
+export type MatchPhase = "Lobby" | "Intermission" | "RoleAssign" | "WormLoadout" | "Playing" | "Ending"
 
 export type Role = "Pardner" | "Worm"
 

@@ -10,6 +10,7 @@
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local ServerStorage = game:GetService("ServerStorage")
 local Workspace = game:GetService("Workspace")
 
 local AssetService = require(ReplicatedStorage.Shared.AssetService)
@@ -406,6 +407,11 @@ function TrainService.reset(pardnerCount: number, difficultyName: string?)
 	hornReadyAt = 0
 	leverLockedUntil = 0
 	setPhase("Fueling")
+end
+
+-- Phase 13: the Train is only in the Workspace while the map is loaded (its prompts stay connected).
+function TrainService.setActive(active: boolean)
+	train.Parent = if active then Workspace else ServerStorage
 end
 
 function TrainService.init()

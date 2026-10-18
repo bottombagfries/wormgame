@@ -6,12 +6,9 @@ return {
 
 	-- Match flow (§5.1)
 	WormCount = 1,
-	MinPlayers = 2, -- TUNE
-	LobbySeconds = 20, -- TUNE: countdown once enough players are in; skipped when everyone is ready
-	RoleAssignSeconds = 4, -- TUNE: how long the "You are a ..." reveal stays up
+	-- Lobby, intermission, role reveal and results timings: Config/Lobby.
 	WormLoadoutSeconds = 20,
 	WormAbilityPicks = 2,
-	EndingSeconds = 12, -- TUNE
 	RespawnSeconds = 3, -- TUNE: for anyone who dies outside a match (lobby, spectators)
 	MatchTickSeconds = 0.25, -- TUNE: how often MatchService and ObjectiveService re-check state
 	DefaultDifficulty = "Normal",
@@ -77,7 +74,7 @@ return {
 		KeyholeHoldSeconds = 0.5, -- TUNE
 	},
 
-	-- Until ranch spawning exists (Phase 8), everyone spawns here, relative to the TrainSpot.
+	-- With Debug.SpawnAtTrain, Pardners start here (relative to the TrainSpot) instead of at the ranches.
 	TemporarySpawnOffset = Vector3.new(0, 0, 45), -- TUNE
 	TemporarySpawnSize = Vector3.new(12, 1, 12),
 

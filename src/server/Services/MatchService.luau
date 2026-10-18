@@ -1,9 +1,11 @@
 --!strict
--- Match flow (§5.1): Lobby -> RoleAssign -> WormLoadout -> Playing -> Ending -> Lobby.
+-- Round loop (§5.1, Phase 13): Lobby (waiting) -> Intermission -> RoleAssign (role card) -> WormLoadout ->
+-- Playing -> Ending (results) -> Lobby, all on one server. The map is loaded for the round and unloaded
+-- after; between rounds everyone waits at the lobby station (Map/Lobby).
 -- Owns roles, match settings, the worm's ability picks and the sundown clock (§5.4).
 --
 -- Replication: State_Match carries a Types.MatchState; each player also gets attributes
---   Role ("Pardner" | "Worm" | "None"), Ready (boolean), Abilities (comma-separated ids, worms only).
+--   Role ("Pardner" | "Worm" | "None"), Afk (boolean), Abilities (comma-separated ids, worms only).
 
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
@@ -13,6 +15,7 @@ local Workspace = game:GetService("Workspace")
 local Abilities = require(ReplicatedStorage.Shared.Config.Abilities)
 local Difficulty = require(ReplicatedStorage.Shared.Config.Difficulty)
 local GameConfig = require(ReplicatedStorage.Shared.Config.Game)
+local LobbyConfig = require(ReplicatedStorage.Shared.Config.Lobby)
 local Objectives = require(ReplicatedStorage.Shared.Config.Objectives)
 local Structures = require(ReplicatedStorage.Shared.Config.Structures)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -24,6 +27,7 @@ local AbilityService = require(script.Parent.AbilityService)
 local ExplosionService = require(script.Parent.ExplosionService)
 local MapService = require(script.Parent.MapService)
 local NPCService = require(script.Parent.NPCService)
+local Lobby = require(script.Parent.Parent.Map.Lobby)
 local SoundCue = require(script.Parent.Parent.Util.SoundCue)
 local ObjectiveService = require(script.Parent.ObjectiveService)
 local PardnerService = require(script.Parent.PardnerService)
@@ -58,6 +62,7 @@ local host: Player? = nil
 local roles: { [Player]: Types.Role } = {}
 local loadouts: { [Player]: { string } } = {}
 local trainOutcome: { Player }? = nil -- who escaped, once the Train has left
+local lastResult: string? = nil -- one line about the previous round (lobby board + HUD)
 
 local function now(): number
 	return Workspace:GetServerTimeNow()
@@ -81,17 +86,18 @@ local function defaultSettings(): Types.MatchSettings
 end
 
 local function minPlayers(): number
-	return if Debug.Enabled and Debug.AllowSoloMatch then 1 else GameConfig.MinPlayers
+	return if Debug.Enabled and Debug.AllowSoloMatch then 1 else LobbyConfig.MinPlayers
 end
 
-local function countReady(players: { Player }): number
-	local ready = 0
-	for _, player in players do
-		if player:GetAttribute("Ready") == true then
-			ready += 1
+-- Players who can be put in the next round (not AFK).
+local function activePlayers(): { Player }
+	local list = {}
+	for _, player in Players:GetPlayers() do
+		if player:GetAttribute("Afk") ~= true then
+			table.insert(list, player)
 		end
 	end
-	return ready
+	return list
 end
 
 local function buildState(): Types.MatchState
@@ -107,9 +113,10 @@ local function buildState(): Types.MatchState
 		difficulty = settings.difficulty,
 		hostUserId = if host then host.UserId else 0,
 		playerCount = #players,
-		readyCount = countReady(players),
+		activeCount = #activePlayers(),
 		minPlayers = minPlayers(),
 		result = result,
+		lastResult = lastResult,
 	}
 end
 
@@ -117,9 +124,25 @@ local function broadcast()
 	matchRemote:FireAllClients(buildState())
 end
 
+local function updateBoard()
+	local text
+	if phase == "Lobby" then
+		text = `WAITING FOR PLAYERS  {#activePlayers()}/{minPlayers()}`
+	elseif phase == "Intermission" then
+		local left = math.max(0, math.ceil((endsAt or now()) - now()))
+		text = string.format("NEXT TRAIN IN %d:%02d", left // 60, left % 60)
+	elseif phase == "Ending" then
+		text = "TRAIN ARRIVING"
+	else
+		text = "TRAIN IN PROGRESS"
+	end
+	Lobby.setStatus(text)
+end
+
 local function enterPhase(newPhase: Types.MatchPhase, phaseEndsAt: number?)
 	phase = newPhase
 	endsAt = phaseEndsAt
+	updateBoard()
 	broadcast()
 	phaseChanged:fire(newPhase)
 end
@@ -151,22 +174,42 @@ local function names(players: { Player }): { string }
 	return list
 end
 
--- Worms have no humanoid character, so they are skipped. With `atRanches`, Pardners are moved to a
--- random ranch spawn (§4) once their character exists; everyone else uses the lobby spawn.
-local function respawnEveryone(atRanches: boolean?)
+-- The teleport to the map: each Pardner gets a fresh character at a random ranch spawn (§4), or beside
+-- the Train with Debug.SpawnAtTrain. Worms have no humanoid character (WormService builds theirs).
+local function sendPardnersToMap(pardners: { Player })
 	local spawns = MapService.getPardnerSpawns()
-	for _, player in Players:GetPlayers() do
-		if not WormService.isWorm(player) then
-			task.spawn(function()
-				local ok = pcall(player.LoadCharacter, player)
-				local character = player.Character
-				local ranch = atRanches and roles[player] == "Pardner" and #spawns > 0
-				if ok and character and ranch then
-					character:PivotTo(RandomUtil.pick(spawns) * CFrame.new(0, Structures.Ranch.SpawnHeight, 0))
-				end
-			end)
+	local atTrain = (Debug.Enabled and Debug.SpawnAtTrain) or #spawns == 0
+	for _, player in pardners do
+		task.spawn(function()
+			local ok = pcall(player.LoadCharacter, player)
+			local character = player.Character
+			if ok and character then
+				character:PivotTo(
+					if atTrain
+						then MapService.getTrainSpawn()
+						else RandomUtil.pick(spawns) * CFrame.new(0, Structures.Ranch.SpawnHeight, 0)
+				)
+			end
+		end)
+	end
+end
+
+-- Back to the station: a fresh character on a lobby spawn pad.
+local function sendToLobby(players: { Player })
+	for _, player in players do
+		if player.Parent == Players then
+			task.spawn(pcall, player.LoadCharacter, player)
 		end
 	end
+end
+
+-- The board's big line and the round summary (also sent to clients as lastResult).
+local function describeResult(matchResult: Types.MatchResult): string
+	local total = #matchResult.escaped + #matchResult.dead
+	if matchResult.winner == "Pardners" then
+		return `Pardners escaped ({#matchResult.escaped} of {total})`
+	end
+	return "The Worm ate everyone"
 end
 
 local function choosableAbilities(): { string }
@@ -187,39 +230,43 @@ end
 
 -- Phases ----------------------------------------------------------------------------------------
 
--- Waits for enough players, then for the countdown or for everyone to press Ready.
+-- Lobby ("Waiting for players") until enough active players are in, then the Intermission countdown.
+-- Dropping below the minimum during the countdown goes back to waiting.
 local function runLobby()
-	for _, player in Players:GetPlayers() do
-		player:SetAttribute("Ready", false)
+	if MapService.isMapLoaded() then
+		MapService.unloadMap()
+		TrainService.setActive(false)
 	end
 	enterPhase("Lobby", nil)
 
 	local lastSignature = ""
 	while true do
-		local players = Players:GetPlayers()
-		local ready = countReady(players)
-		if #players >= minPlayers() then
-			local countdownEnds = endsAt or now() + GameConfig.LobbySeconds
-			endsAt = countdownEnds
-			if ready == #players or now() >= countdownEnds then
-				return
-			end
-		else
-			endsAt = nil
+		local enough = #activePlayers() >= minPlayers()
+		if enough and phase ~= "Intermission" then
+			enterPhase("Intermission", now() + LobbyConfig.IntermissionSeconds)
+		elseif not enough and phase ~= "Lobby" then
+			enterPhase("Lobby", nil)
+		end
+		if phase == "Intermission" and now() >= (endsAt or 0) then
+			return
 		end
 
-		local signature = `{#players}:{ready}:{endsAt or 0}:{settings.difficulty}`
+		local signature = `{#Players:GetPlayers()}:{#activePlayers()}:{settings.difficulty}`
 		if signature ~= lastSignature then
 			lastSignature = signature
 			broadcast()
 		end
+		updateBoard()
 		task.wait(TICK)
 	end
 end
 
--- WormCount random worms, but always at least one Pardner.
+-- WormCount random worms, but always at least one Pardner. Only active (non-AFK) players take part;
+-- everyone else stays in the lobby. The map is loaded here, while the role card is up.
 local function runRoleAssign()
-	local players = RandomUtil.shuffle(Players:GetPlayers())
+	MapService.loadMap()
+	TrainService.setActive(true)
+	local players = RandomUtil.shuffle(activePlayers())
 	local wormCount = math.max(0, math.min(GameConfig.WormCount, #players - 1))
 	if Debug.Enabled and Debug.NoWorm then
 		wormCount = 0
@@ -232,8 +279,8 @@ local function runRoleAssign()
 			PardnerService.add(player)
 		end
 	end
-	enterPhase("RoleAssign", now() + GameConfig.RoleAssignSeconds)
-	task.wait(GameConfig.RoleAssignSeconds)
+	enterPhase("RoleAssign", now() + LobbyConfig.RoleRevealSeconds)
+	task.wait(LobbyConfig.RoleRevealSeconds)
 end
 
 -- Worms pick their abilities; anything left unpicked when time runs out is filled at random.
@@ -291,7 +338,7 @@ local function runPlaying(): Types.MatchResult
 		PardnerService.remove(pardner)
 		PardnerService.add(pardner)
 	end
-	respawnEveryone(not (Debug.Enabled and Debug.SpawnAtTrain))
+	sendPardnersToMap(pardners)
 
 	ReviveService.begin(settings)
 	ObjectiveService.begin({
@@ -381,9 +428,10 @@ local function cleanupMatch()
 	table.clear(roles)
 	table.clear(loadouts)
 	ItemService.clearAll()
-	MapService.clearRuntime()
+	MapService.unloadMap()
 	ExplosionService.clearAll()
 	TrainService.reset(1)
+	TrainService.setActive(false)
 
 	night = false
 	sundownAt = nil
@@ -392,12 +440,23 @@ local function cleanupMatch()
 	Lighting.ClockTime = GameConfig.Sundown.DayClockTime
 end
 
+-- Results, then everyone who played (and anyone without a character) goes back to the lobby.
 local function runEnding(matchResult: Types.MatchResult)
 	result = matchResult
-	enterPhase("Ending", now() + GameConfig.EndingSeconds)
-	task.wait(GameConfig.EndingSeconds)
+	lastResult = describeResult(matchResult)
+	Lobby.setLastResult(lastResult)
+	enterPhase("Ending", now() + LobbyConfig.ResultsSeconds)
+	updateBoard()
+	task.wait(LobbyConfig.ResultsSeconds)
+
+	local returning = {}
+	for _, player in Players:GetPlayers() do
+		if roles[player] or not player.Character then
+			table.insert(returning, player)
+		end
+	end
 	cleanupMatch()
-	respawnEveryone()
+	sendToLobby(returning)
 end
 
 local function runMatch()
@@ -409,14 +468,9 @@ end
 
 -- Request handlers ------------------------------------------------------------------------------
 
-local function onReady(player: Player, state: any)
-	if phase == "Lobby" and typeof(state) == "boolean" then
-		player:SetAttribute("Ready", state)
-	end
-end
-
 local function onSetDifficulty(player: Player, name: any)
-	if phase ~= "Lobby" or player ~= host or typeof(name) ~= "string" or not Difficulty[name] then
+	local inLobby = phase == "Lobby" or phase == "Intermission"
+	if not inLobby or player ~= host or typeof(name) ~= "string" or not Difficulty[name] then
 		return
 	end
 	settings.difficulty = name
@@ -476,7 +530,6 @@ function MatchService.init()
 end
 
 function MatchService.start()
-	Net.onRequest("Request_Ready", onReady)
 	Net.onRequest("Request_SetDifficulty", onSetDifficulty)
 	Net.onRequest("Request_SelectAbilities", onSelectAbilities)
 
@@ -495,7 +548,6 @@ function MatchService.start()
 	-- Anyone who joins mid-match watches until the next lobby.
 	local function onPlayerAdded(player: Player)
 		setRole(player, nil)
-		player:SetAttribute("Ready", false)
 		matchRemote:FireClient(player, buildState())
 
 		-- Characters are loaded by hand (CharacterAutoLoads is off). A Pardner who dies mid-match
@@ -531,6 +583,7 @@ function MatchService.start()
 			if not ok then
 				warn(`[MatchService] Match loop error, returning to the lobby:\n{message}`)
 				cleanupMatch()
+				sendToLobby(Players:GetPlayers())
 				task.wait(ERROR_RETRY_SECONDS)
 			end
 		end
