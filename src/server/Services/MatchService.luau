@@ -357,6 +357,33 @@ local function runWormLoadout()
 	end
 end
 
+-- The result plus this round's numbers for the results screen (read before cleanup clears them).
+local function finishResult(
+	winner: "Pardners" | "Worm",
+	escaped: { Player },
+	dead: { Player },
+	startedAt: number
+): Types.MatchResult
+	local deaths = ReviveService.getRoundStats()
+	local done, total = ObjectiveService.getSummary()
+	return {
+		winner = winner,
+		escaped = names(escaped),
+		dead = names(dead),
+		worms = names(playersWithRole("Worm")),
+		stats = {
+			fuelDelivered = TrainService.getDelivered(),
+			fuelMeter = TrainService.getFuelMeter(),
+			pardnersEaten = deaths.eaten,
+			pardnersDied = deaths.died,
+			revives = deaths.revived,
+			objectivesDone = done,
+			objectivesTotal = total,
+			seconds = now() - startedAt,
+		},
+	}
+end
+
 local function runPlaying(): Types.MatchResult
 	ItemService.clearAll()
 	ExplosionService.clearAll()
@@ -413,16 +440,12 @@ local function runPlaying(): Types.MatchResult
 					table.insert(dead, player)
 				end
 			end
-			return {
-				winner = if #escaped > 0 then "Pardners" else "Worm",
-				escaped = names(escaped),
-				dead = names(dead),
-			}
+			return finishResult(if #escaped > 0 then "Pardners" else "Worm", escaped, dead, startedAt)
 		end
 
 		-- No Pardner left alive (or in the game): nobody can carry a heart jar, so the Worm wins (§5.1).
 		if PardnerService.getAliveCount() == 0 then
-			return { winner = "Worm", escaped = {}, dead = names(playersWithRole("Pardner")) }
+			return finishResult("Worm", {}, playersWithRole("Pardner"), startedAt)
 		end
 
 		-- 66 % of the way to sundown: the balloon pilot's supply drop (§5.4).

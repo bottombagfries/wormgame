@@ -13,7 +13,10 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local Label = require(script.Parent.UI.Components.Label)
 local Modal = require(script.Parent.UI.Components.Modal)
 local LobbyHud = require(script.Parent.UI.LobbyHud)
+local SettingsScreen = require(script.Parent.UI.SettingsScreen)
+local ShopScreen = require(script.Parent.UI.ShopScreen)
 local MatchController = require(script.Parent.MatchController)
+local SettingsController = require(script.Parent.SettingsController)
 local SpectateController = require(script.Parent.SpectateController)
 
 local URGENT_SECONDS = 5 -- the countdown turns brass and pops for the last few seconds
@@ -90,20 +93,11 @@ local function update()
 	)
 end
 
--- A modal with a single line of text (screens that aren't built yet).
+-- A modal with a single line of text (Cosmetics, until cosmetics exist).
 local function placeholder(parent: Instance, name: string, title: string, text: string): Modal.Modal
 	local modal = Modal.new(parent, { name = name, title = title, size = UDim2.fromScale(0.42, 0.4), aspect = 1.4 })
 	Label.new(modal.content, { text = text, maxTextSize = 26 }).TextWrapped = true
 	return modal
-end
-
--- Registers a lobby window (step 6 swaps the placeholders for real screens).
-function LobbyController.setModal(name: string, modal: Modal.Modal)
-	local old = modals[name]
-	if old then
-		old.gui:Destroy()
-	end
-	modals[name] = modal
 end
 
 function LobbyController.init()
@@ -133,8 +127,8 @@ function LobbyController.init()
 		"COSMETICS",
 		"Hats, trails and worm skins are on their way. Nothing here will ever change how the game plays."
 	)
-	modals.Shop = placeholder(playerGui, "ShopScreen", "SHOP", "The general store is closed for now.")
-	modals.Settings = placeholder(playerGui, "SettingsScreen", "SETTINGS", "Settings are coming soon.")
+	modals.Shop = ShopScreen.create(playerGui)
+	modals.Settings = SettingsScreen.create(playerGui, SettingsController.get() :: any, SettingsController.set)
 end
 
 function LobbyController.start()

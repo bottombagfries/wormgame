@@ -12,7 +12,7 @@ local LobbyConfig = require(ReplicatedStorage.Shared.Config.Lobby)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Types = require(ReplicatedStorage.Shared.Types)
 local Signal = require(ReplicatedStorage.Shared.Util.Signal)
-local EndScreen = require(script.Parent.UI.EndScreen)
+local ResultsScreen = require(script.Parent.UI.ResultsScreen)
 local LoadoutScreen = require(script.Parent.UI.LoadoutScreen)
 local RoleCard = require(script.Parent.UI.RoleCard)
 
@@ -34,7 +34,7 @@ local state: Types.MatchState = {
 }
 
 local loadout: LoadoutScreen.Screen
-local endScreen: EndScreen.Screen
+local endScreen: ResultsScreen.Screen
 local roleCard: RoleCard.Screen
 
 local function secondsLeft(): number
@@ -83,7 +83,7 @@ local function onState(newState: Types.MatchState)
 		end
 		local result = newState.result
 		if newState.phase == "Ending" and result then
-			endScreen.show(result, personalOutcome(result))
+			endScreen.show(result, personalOutcome(result), newState.endsAt)
 		else
 			endScreen.hide()
 		end
@@ -116,7 +116,7 @@ function MatchController.init()
 	loadout = LoadoutScreen.create(playerGui, function(ids: { string })
 		Net.event("Request_SelectAbilities"):FireServer(ids)
 	end)
-	endScreen = EndScreen.create(playerGui)
+	endScreen = ResultsScreen.create(playerGui)
 	roleCard = RoleCard.create(playerGui)
 end
 

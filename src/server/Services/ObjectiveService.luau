@@ -167,6 +167,17 @@ function ObjectiveService.finish()
 	objectivesRemote:FireAllClients(lastSent)
 end
 
+-- How many of this match's objectives are done, out of how many.
+function ObjectiveService.getSummary(): (number, number)
+	local done = 0
+	for _, progress in lastSent do
+		if progress.done then
+			done += 1
+		end
+	end
+	return done, #lastSent
+end
+
 function ObjectiveService.isActive(id: string): boolean
 	for _, entry in active do
 		if entry.def.id == id then

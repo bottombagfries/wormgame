@@ -29,6 +29,7 @@ export type Modal = {
 
 local SCRIM_TRANSPARENCY = 0.45
 local CLOSE_SIZE = UDim2.fromScale(0.11, 0.62)
+local SCREEN_GUTTER = 8 -- px kept clear on each side on very narrow screens
 
 local Modal = {}
 
@@ -52,9 +53,18 @@ function Modal.new(parent: Instance, options: Options): Modal
 		size = options.size or UDim2.fromScale(0.5, 0.7),
 	})
 	Style.aspect(panel.frame, options.aspect or 1)
+	-- A minimum width for readability, but never wider than the screen.
 	local limits = Instance.new("UISizeConstraint")
-	limits.MinSize = Vector2.new(options.minWidth or 320, 0)
 	limits.Parent = panel.frame
+	local function fitWidth()
+		local screen = gui.AbsoluteSize.X
+		if screen <= 0 then
+			return
+		end
+		limits.MinSize = Vector2.new(math.min(options.minWidth or 320, math.max(screen - SCREEN_GUTTER * 2, 0)), 0)
+		limits.MaxSize = Vector2.new(math.max(screen - SCREEN_GUTTER * 2, 1), math.huge)
+	end
+	gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(fitWidth)
 
 	local closedCallbacks: { () -> () } = {}
 	local modal: Modal
@@ -80,12 +90,14 @@ function Modal.new(parent: Instance, options: Options): Modal
 	end)
 
 	gui.Parent = parent
+	fitWidth()
 
 	modal = {
 		gui = gui,
 		content = panel.content,
 		open = function()
 			gui.Enabled = true
+			fitWidth()
 			panel.popIn()
 		end,
 		close = function()

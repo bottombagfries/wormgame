@@ -72,6 +72,7 @@ local timer = 0
 local ring: BasePart? = nil
 local ghostsFolder: Instance
 local notifyRemote: RemoteEvent
+local roundStats = { eaten = 0, died = 0, revived = 0 }
 
 local function now(): number
 	return Workspace:GetServerTimeNow()
@@ -221,6 +222,7 @@ local function onDied(player: Player)
 			end
 			notifyRemote:FireClient(player, "You were eaten. Your heart jar will appear when the Worm digests you")
 			notifyRemote:FireAllClients(`{player.DisplayName} was eaten`, "Kill")
+			roundStats.eaten += 1
 		else
 			spawnJar(death, position + Vector3.yAxis * PardnerConfig.JarSpawnHeight)
 			if character then
@@ -232,6 +234,7 @@ local function onDied(player: Player)
 			end
 			notifyRemote:FireClient(player, "You died. A Pardner can carry your heart jar to the Church")
 			notifyRemote:FireAllClients(`{player.DisplayName} died`, "Kill")
+			roundStats.died += 1
 		end
 		spawnGhost(player, position + Vector3.yAxis * GhostConfig.SpawnHeight)
 	end)
@@ -277,6 +280,7 @@ function ReviveService.revive(player: Player, cframe: CFrame): boolean
 	TrainService.restartDepartTimer()
 	SoundCue.play("Revive", cframe.Position)
 	notifyRemote:FireAllClients(`{player.DisplayName} has been revived!`, "Revive")
+	roundStats.revived += 1
 	revived:fire(player)
 	return true
 end
@@ -325,6 +329,7 @@ end
 
 -- Call after MapService.populate(): the revive ring is the one MapService put by the Church.
 function ReviveService.begin(settings: Types.MatchSettings)
+	roundStats = { eaten = 0, died = 0, revived = 0 }
 	ReviveService.finish()
 	reviveLimit = settings.reviveLimit
 	night = false
@@ -351,6 +356,11 @@ function ReviveService.finish()
 end
 
 -- No Church revives after sundown (§5.4).
+-- This round's deaths and revives, for the results screen.
+function ReviveService.getRoundStats(): { eaten: number, died: number, revived: number }
+	return table.clone(roundStats)
+end
+
 function ReviveService.setNight(isNight: boolean)
 	night = isNight
 end

@@ -9,6 +9,7 @@ local Workspace = game:GetService("Workspace")
 
 local Sounds = require(ReplicatedStorage.Shared.Config.Sounds)
 local Net = require(ReplicatedStorage.Shared.Net)
+local SettingsController = require(script.Parent.SettingsController)
 
 local CLEANUP_SECONDS = 10 -- a one-shot sound's holder is removed after this long
 
@@ -22,6 +23,7 @@ local function play(key: string, position: Vector3?)
 	local sound = Instance.new("Sound")
 	sound.SoundId = def.id
 	sound.Volume = def.volume
+	sound.SoundGroup = SettingsController.getGroup("Sfx") -- the Settings window's SFX volume
 	if def.positional and position then
 		local holder = Instance.new("Part")
 		holder.Anchored = true

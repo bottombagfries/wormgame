@@ -15,6 +15,7 @@ local Workspace = game:GetService("Workspace")
 local AssetService = require(ReplicatedStorage.Shared.AssetService)
 local Abilities = require(ReplicatedStorage.Shared.Config.Abilities)
 local PardnerConfig = require(ReplicatedStorage.Shared.Config.Pardner)
+local SettingsConfig = require(ReplicatedStorage.Shared.Config.Settings)
 local WormConfig = require(ReplicatedStorage.Shared.Config.Worm)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Types = require(ReplicatedStorage.Shared.Types)
@@ -22,6 +23,7 @@ local Ground = require(ReplicatedStorage.Shared.Util.Ground)
 local TagDefs = require(ReplicatedStorage.Shared.Util.Tags)
 local InputController = require(script.Parent.InputController)
 local MatchController = require(script.Parent.MatchController)
+local SettingsController = require(script.Parent.SettingsController)
 
 local Tags = TagDefs.Tags
 local UNLOCKED_MAX_ZOOM = 1e5 -- lets min and max zoom be set in either order
@@ -43,6 +45,7 @@ local player = Players.LocalPlayer
 local visuals: { [Instance]: Visual } = {}
 local fxFolder: Folder
 local cameraAnchor: Part
+local usingMouthView = false -- the Settings mouth view is applied to the camera
 local abilityRemote: RemoteEvent
 local launchUntil = 0
 local sentSneak = false
@@ -251,22 +254,40 @@ local function control(worm: Model, head: BasePart, camera: Camera)
 	end
 end
 
--- The default camera follows a point over the worm (above ground even when the head is below it).
-local function updateCamera(head: BasePart, camera: Camera)
-	local position = head.Position
-	local sandY = Ground.sandBelow(position)
-	local y = math.max(position.Y, (sandY or position.Y) + WormConfig.Camera.AnchorHeight)
-	cameraAnchor.Position = Vector3.new(position.X, y, position.Z)
-	if camera.CameraSubject ~= cameraAnchor then
-		camera.CameraType = Enum.CameraType.Custom
-		camera.CameraSubject = cameraAnchor
-	end
-end
-
 local function setZoomRange(min: number, max: number)
 	player.CameraMaxZoomDistance = UNLOCKED_MAX_ZOOM
 	player.CameraMinZoomDistance = min
 	player.CameraMaxZoomDistance = max
+end
+
+-- The default camera follows a point over the worm (above ground even when the head is below it). With the
+-- mouth view setting on, it sits just in front of the head in first person instead.
+local function updateCamera(head: BasePart, camera: Camera)
+	local mouthView = SettingsController.get().WormMouthView
+	if mouthView ~= usingMouthView then
+		usingMouthView = mouthView
+		local Mouth = SettingsConfig.MouthView
+		if mouthView then
+			setZoomRange(Mouth.Zoom, Mouth.Zoom)
+		else
+			setZoomRange(WormConfig.Camera.MinZoom, WormConfig.Camera.MaxZoom)
+		end
+	end
+
+	local position = head.Position
+	if mouthView then
+		local Mouth = SettingsConfig.MouthView
+		local forward = flatUnit(head.CFrame.LookVector) or -Vector3.zAxis
+		cameraAnchor.Position = position + forward * Mouth.ForwardOffset + Vector3.yAxis * Mouth.UpOffset
+	else
+		local sandY = Ground.sandBelow(position)
+		local y = math.max(position.Y, (sandY or position.Y) + WormConfig.Camera.AnchorHeight)
+		cameraAnchor.Position = Vector3.new(position.X, y, position.Z)
+	end
+	if camera.CameraSubject ~= cameraAnchor then
+		camera.CameraType = Enum.CameraType.Custom
+		camera.CameraSubject = cameraAnchor
+	end
 end
 
 local function update()
@@ -280,6 +301,7 @@ local function update()
 	if isWorm ~= wasWorm then
 		wasWorm = isWorm
 		sentSneak = false
+		usingMouthView = false
 		if isWorm then
 			setZoomRange(WormConfig.Camera.MinZoom, WormConfig.Camera.MaxZoom)
 		else

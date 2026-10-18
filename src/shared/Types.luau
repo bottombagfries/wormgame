@@ -232,6 +232,20 @@ export type MatchResult = {
 	winner: "Pardners" | "Worm",
 	escaped: { string },
 	dead: { string },
+	worms: { string }?,
+	stats: RoundStats?,
+}
+
+-- Round numbers for the results screen (Phase 13).
+export type RoundStats = {
+	fuelDelivered: number, -- fuel points thrown into the furnace
+	fuelMeter: number, -- 0-100
+	pardnersEaten: number,
+	pardnersDied: number, -- other deaths (dynamite, collapse, ...)
+	revives: number,
+	objectivesDone: number,
+	objectivesTotal: number,
+	seconds: number, -- how long the round lasted
 }
 
 export type MatchPhase = "Lobby" | "Intermission" | "RoleAssign" | "WormLoadout" | "Playing" | "Ending"

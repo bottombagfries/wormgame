@@ -1,158 +1,94 @@
 # PROGRESS
 
-Last updated: 2026-10-18 (Phase 13 — Lobby & UI overhaul in progress). Rewrite this
-file at the end of every phase (CLAUDE.md §17).
+Last updated: 2026-10-18 (Phase 13 — Lobby & UI overhaul built, all 6 steps; awaiting human tests).
+Rewrite this file at the end of every phase (CLAUDE.md §17).
 
 ## Phases completed
 
 - **Phases 1–8** (skeleton, Pardner basics, items, Train & fuel, match flow, worm core, death & revive, map
   population). Done; each confirmed in Studio.
-- **Phase 9 — Objectives 2–7.** All six written. Confirmed: RepairTracks. Never reported: the other five.
-- **Phase 10 — All kit items.** Written; never reported in Studio.
-- **Phase 11 — Worm abilities.** Written; never reported in Studio.
-- **Phase 12 — Sundown effects, airdrops, balloon escape, sound hooks, polish.** Written; `stylua`, `selene`
-  (0 warnings), `rojo build` pass. **Not yet confirmed in Studio.**
-- **Test pass (2026-10-17), solo, driven through the Studio MCP** (a scripted client firing the real remotes,
-  with every objective forced on and a 60 s sundown in a Studio-only config edit, since reverted):
-  - Passed: all 6 objectives set up together without errors; Train Key → keyhole; fuel (3 Massive Coal =
-    72/100, matches the formula); tumbleweed lit at furnace → signal fire lit; 2 scrap repairs a track;
-    sassparilla crate delivered (6 bottles); safe (puzzle map → 3 digits → keypad → manual); dandylion
-    lures a bug, which eats it; every kit (uses counted down, passives say so, rifle recoil, pogo ×5,
-    coffee ×3, snake oil one dose, concoction ×3, cactus seeds plant small cacti near the Train, zipline
-    builds and rides); airdrop (+5 chests at ~40 s); night at 60 s.
-  - Fixed: (1) Roblox now keeps `PlayerModule` in `StarterPlayer` with no `GetControls` → InputController
-    looked for it forever and `getMoveVector` returned zero (climbing input). It now finds either location and
-    falls back to the raw WASD keybinds. (2) Thrown dandylions were rolling balls that rolled ~30 studs/s
-    out of the bugs' reach → they now anchor where they land. (3) Cattlebugs could wander off the map edge
-    into the void → they turn back when there's no ground ahead.
-  - Not testable solo: worm abilities (Phase 11), balloon escape, anything 2P.
-- **Art pass (2026-10-17):** all 94 assets have real low-poly models (Blender scripts → Open Cloud → Studio),
-  verified in a solo playtest. Details, rules and Config size changes: `assets/ASSET_STATUS.md`.
-- **Phase 13 — Lobby & UI overhaul** (added to CLAUDE.md §15 and CHECKLIST.md; 6 steps).
-  - Step 1 done, **awaiting style approval**: `Config/Theme.luau` ("frontier notice board": paper panels on
-    dark wood, hard drop shadow, brass accent; fonts Antique for titles, Merriweather Heavy for buttons /
-    headings, Builder Sans for body + numbers — Arvo isn't available in Roblox). Components in
-    `Controllers/UI/Components/`: Style (corner/stroke/padding/text limits/shadowed/tween/screen), UiSound
-    (local UI sounds, `Ui*` keys in Config/Sounds, empty ids), Label, Panel (root + shadow + body, title
-    banner, popIn), Button (hover 1.05 / press 0.95, click/hover/error sounds, disabled state), Bar (ghost
-    fill, locked cap, pulse), Slot (key hint, selected stroke, cooldown overlay + seconds).
-    `UI/StyleSample.luau` shows them all when `Config.Game.Debug.ShowUiSample = true`. Capture:
-    `assets/renders/ui_style_sample.jpg` (checked at the ~540×710 Studio viewport = phone-ish). Approved.
-  - Step 2 done: round loop on one server — Lobby (waiting, needs `Config.Lobby.MinPlayers` non-AFK) →
-    Intermission (20 s) → RoleAssign (map loaded) → WormLoadout → Playing (Pardners teleported) → Ending →
-    back to the lobby. `Map/Lobby.luau` builds the station at `Config.Lobby.Origin` (0,0,3000) from
-    AssetService ids `Lobby*` + barrel/crate/cacti, spawn pads, invisible walls, departures board
-    (SurfaceGui: countdown / waiting / in progress + last result). The map template and Train sit in
-    ServerStorage between rounds (`MapService.loadMap/unloadMap`, `TrainService.setActive`); runtime is
-    destroyed. Ready button removed (MM2-style countdown only). Only round players are teleported/returned.
-  - Step 3 done: `shared/RoleRoll.luau` (weighted pick without replacement + chance %). MatchService keeps a
-    per-UserId weight (session only): Pardners +1 per round (max 10), the Worm resets to 1; AFK players
-    (`Afk` attribute via `Request_SetAfk`) are skipped. `WormChance` attribute (0–100) on every player.
-    `UI/RoleCard.luau` (role-colored band, title slam, description fade, Reveal sound; text in
-    `Config.Lobby.RoleCards`). `UI/LoadoutScreen.luau` rebuilt: timer bar + 2-column ability cards with
-    descriptions (new `description` field in Config/Abilities); Pardners get a "Worm is choosing" strip.
-  - Step 4 done: `LobbyController` + `UI/LobbyHud` (status strip top-center with countdown that pops in
-    the last 5 s, last result, host difficulty button; menu down the left: Shop, Cosmetics, Settings,
-    Spectate, AFK toggle; info card bottom-right: players, Worm chance %). Shown to anyone without a role.
-    `Components/Modal` (scrim + panel + X). `SpectateController` + `UI/SpectateHud` (cycles living
-    Pardners and Worm heads, name + role chip, auto-advances, stops at round end). Old `LobbyScreen` deleted.
-  - Step 5 done: PardnerHud (wood vitals card bottom-left, health pulses under 25 %, ring crosshair, compass
-    chip), InventoryHud (kit + bag Slots bottom-center, big items span slots, hands pill, detector pill,
-    paper hover label), ObjectivesHud (paper checklist top-right with check pops, sundown clock chip
-    top-center that turns to night), WormHud (status card + ability Slots with cooldown overlays that pop
-    when ready), GhostHud — all from Components. Narrow screens (< `Theme.Sizes.CompactWidth` 760 px):
-    vitals stack above the bottom row, clock moves under the Roblox buttons, toasts stack up mid-screen;
-    `Style.fitRow` shrinks slot rows to fit. `ToastController` + `UI/Toasts`: `Fx_Notify(text, kind?)` —
-    kinds Kill / Objective / Sundown / Revive / Event get a toast (Objective + Sundown big), no kind = hint.
-    Server now sends "X was eaten" / "X died", "Objective complete: …", "Every objective is done…",
-    "Sundown!", revives, heart jars, balloon, cattlebug pen, safe. `Bar.set` skips unchanged values.
+- **Phases 9–12** (objectives 2–7, all kits, worm abilities, sundown/airdrop/balloon/sound hooks). Written;
+  RepairTracks confirmed by the user; the rest passed an automated solo MCP pass on 2026-10-17 (every
+  objective, every kit, airdrop, night). Not testable solo: worm abilities, balloon escape, anything 2P.
+- **Art pass (2026-10-17):** all 94 assets have real low-poly models; see `assets/ASSET_STATUS.md`.
+- **Phase 13 — Lobby & UI overhaul** (CLAUDE.md §15, CHECKLIST.md). All six steps built, self-tested solo
+  through the Studio MCP (selene/stylua clean, no script errors), one commit per step:
+  1. Theme + components (style approved).
+  2. Round loop: Lobby (waiting) → Intermission (20 s, needs `Config.Lobby.MinPlayers` non-AFK) →
+     RoleAssign (map loaded) → WormLoadout → Playing (Pardners teleported) → Ending (results) → lobby.
+     Lobby train station at `Config.Lobby.Origin` (0,0,3000). Map template + Train wait in ServerStorage
+     between rounds; runtime destroyed (verified: Workspace back to Lobby + empty runtime folders).
+  3. Weighted Worm roll (`shared/RoleRoll`), AFK skipped, role card, timed ability picker.
+  4. Lobby HUD (status, last result, host difficulty, Shop/Cosmetics/Settings/Spectate/AFK, players +
+     Worm chance %), spectate (living Pardners + Worm heads, name + role chip).
+  5. In-match HUDs rebuilt from components (Pardner vitals, inventory slots, objectives + sundown clock,
+     worm status + ability slots, ghost), compact layout under 760 px, toasts / kill feed.
+  6. Results (banner, escaped / didn't make it, 6 round stats, countdown), Settings (music, SFX, camera
+     speed, worm mouth view; session only), Shop (game passes from `Config/Shop`, cosmetic only).
 - Deferred by the spec ("Later"): wormlings, cosmetics, mobile controls, data saving.
 
-## What each file does
-
-Root: `default.project.json` (Rojo tree + shift-lock off), `rokit.toml`, `selene.toml`, `stylua.toml`,
-`README.md` (setup, model swapping, sounds, controls, testing helpers).
-
-`src/server`
-- `init.server.luau` — creates remotes, then loads Services in a fixed order (all `init`, then all `start`).
-- `Services/MatchService` — match loop, roles, settings, loadout; sundown (night flags, health top-up, sound),
-  the 66 % airdrop, balloon escape as a win; cleans every service up between matches.
-- `Services/NPCService` — cattlebugs + dandylions; drives `NPC/BalloonPilot` (`beginMatch`, `airdrop`,
-  `endMatch`, signal `balloonEscaped`).
-- `NPC/BalloonPilot` — balloon model that flies to airdrop spots (chest each) and, when exactly one Pardner is
-  alive (match started with ≥ 2), to a random spot with a ladder (hold F = escape); leaves if alive ≠ 1.
-- `Services/PardnerService` — stats, death, revives, statuses, passive mods, Snake Oil, impulses,
-  `sundownTopUp`. `Services/WormService`, `AbilityService`, `DetectionService`, `ItemService`, `KitService`,
-  `MapService`, `StructureService`, `ExplosionService`, `TrainService`, `ReviveService`, `ObjectiveService`,
-  `DigService`, `DebugService` — as before, plus sound cues.
-- `Util/SoundCue` — `play(key, position?)` → `Fx_Sound` to every client (silent while the id is empty).
-  `Util/Projectile`, `Util/AbilityKit` — as before.
-- `Abilities/`, `Kits/`, `Map/`, `Objectives/` — ability halves, kit behaviours, map helpers, objectives.
-
-`src/client`
-- `Controllers/SoundController` — plays `Config.Sounds` entries on `Fx_Sound` (positional or everywhere).
-- `Controllers/` — `InputController`, `MatchController`, `CameraController`, `PardnerMovementController`,
-  `WormController`, `InventoryController`, `SafeController`, `HUDController`, `WormVisionController`,
-  `MinigameController`, `GhostController`; `UI/` one file per screen.
+## What each file does (Phase 13 additions; older files are described in their header comments)
 
 `src/shared`
-- `Config/Sounds` — one slot per game moment (Explosion, TrainHorn, LeverPulled, FurnaceBurn, Pounce, Grab,
-  MouthEscape, SonarScream, ChestOpen, Dig, Revive, Airdrop, BalloonArrives, Sundown), ids empty.
-- `Config/Game` (+ `Balloon` tuning), and the rest: `AssetService`, `Net`, `Types`, `PardnerLogic`,
-  `ThrowLogic`, `ItemBehaviors/`, `AbilityBehaviors/`, `Config/*`, `Util/*`.
+- `Config/Theme` — every UI color, font, corner, stroke, padding, size, tween, UI sound key, toast timing.
+- `Config/Lobby` — round timings, role-roll weights, role-card text, station layout, board, pads, walls.
+- `Config/Settings` — settings defaults/ranges, mouth-view camera, music ids. `Config/Shop` — game passes.
+- `RoleRoll` — weighted pick without replacement + chance %. `Types` — `MatchPhase` adds Intermission;
+  `MatchState.activeCount/lastResult`; `MatchResult.worms/stats` (`RoundStats`); `ToastKind`.
+`src/server`
+- `Map/Lobby` — builds the station via AssetService, spawn pads, invisible walls, departures board text.
+- `Services/MatchService` — round loop, weights + `WormChance`, AFK (`Request_SetAfk`), teleports, board,
+  results with stats. `MapService.loadMap/unloadMap/getTrainSpawn`; `TrainService.setActive`;
+  `ReviveService.getRoundStats`; `ObjectiveService.getSummary` + objective toasts.
+`src/client/Controllers`
+- `LobbyController` (lobby HUD + windows), `SpectateController`, `ToastController` (`Fx_Notify`),
+  `SettingsController` (values, Music/Sfx sound groups, mouse sensitivity, music player).
+- `UI/Components/` — Style (+`fitRow`), UiSound, Label, Panel, Button, Bar, Slot, Modal, Slider.
+- `UI/` — LobbyHud, SpectateHud, RoleCard, LoadoutScreen, ResultsScreen, SettingsScreen, ShopScreen,
+  Toasts, PardnerHud, InventoryHud, ObjectivesHud, WormHud, GhostHud, StyleSample (debug), plus the
+  older MinigameHud, KeypadScreen, PuzzleMapHud (not restyled yet).
 
 ## Decisions and deviations from the spec
 
-Structure
-- Extra files not in §2: `Config/{ItemTuning,Keybinds,Sounds}`, `shared/{PardnerLogic,ThrowLogic}`,
-  `Util/Ground`, `server/{Map,Objectives,Kits,Abilities,NPC,Util}/*`, `KitService`, `DebugService`,
-  `Controllers/{MatchController,SafeController,SoundController}`.
-- Kits (`server/Kits`) and abilities (`server/Abilities` + `shared/AbilityBehaviors` for client fx) are split
-  from shared code because they need server services.
-- Remotes beyond §13: `Request_Sprint/Jump/Ready/SetDifficulty/SelectAbilities/GhostPush/UseHeld/Dig/SafeCode`,
-  `State_Inventory/Minigame/Safe`, `Ui_SafeKeypad`, `Pardner_Impulse`, `Worm_Launch`, `Fx_Ability`, `Fx_Sound`,
-  `Fx_Notify`.
+Phase 13
+- Fonts: Antique (titles), Merriweather Heavy (buttons/headings), Builder Sans (body) — Arvo isn't in Roblox.
+- No Ready button any more (MM2-style countdown). Host difficulty button stays in the lobby HUD.
+- "Map built far away and cleaned up": the hand-built / greybox map stays at the origin, the lobby is 3000
+  studs away; between rounds the template is parented to ServerStorage (not destroyed, so a hand-built
+  MapTemplate survives) and everything spawned per round is destroyed.
+- Worm weights: base 1, +1 per round played as a Pardner (max 10), reset to 1 as the Worm; session only.
+  Chance % shown = weight share × Worm slots (exact for 1 Worm). Solo (Debug.AllowSoloMatch) shows 0 %.
+- AFK players keep playing a round they're already in; AFK only affects the next roll.
+- Toasts reuse `Fx_Notify(text, kind?)`: no kind = personal hint above the inventory.
+- Settings are client-side for the session (no data saving yet). Camera speed sets
+  `UserInputService.MouseDeltaSensitivity`. Mouth view = first-person camera just in front of the worm head.
+- Shop passes all have id 0 ("Coming soon") until the user creates them; perks are not granted yet.
+- Spectate is local camera only; it's offered to anyone without a role while a round is Playing.
 
-Sundown / balloon (Phase 12)
-- Sundown: lighting → night, worm ability cooldowns × 0.67, Sonar covers the map (40 s cd), outer rings heal
-  faster, no Church revives (Book of the Dead still works), and every living Pardner below the max health one
-  more revive would give them is raised to it.
-- Airdrop: at 66 % of the way to sundown (no sundown = no airdrop) the balloon flies to 5 random sand spots
-  and drops a chest at each (`Chests.spawnOne`: random kit + maybe an extra), then leaves.
-- Balloon escape: only with `EnableBalloon` and if the match started with ≥ `Balloon.MinPardners` (2). When
-  exactly one Pardner is alive it flies to a random sand spot and lowers a ladder; **escaping = holding F at the
-  ladder's foot** (not physically climbing it). A revive (alive ≠ 1) pulls the ladder up and the balloon leaves
-  (despawns) until it's needed again, instead of hovering at the centre. Escaping ends the match: Pardners win.
-- Sound hooks fire from: explosions, horn, lever, furnace, pounce, grab, mouth escape, sonar, chest, dig,
-  revive, airdrop, balloon, sundown. All silent until ids are filled in `Config/Sounds`.
-
-Earlier phases (still true; the per-system detail is in each file's header comment)
-- Abilities: LMB/Space Pounce · E Burrow · Shift Sneak · Q Sonar · F Sinkhole · 1 / 2 picks; cooldowns on the
-  worm HUD. Kits: T uses the kit (`xN` uses); passives via params. Objectives: modules with `setup`,
-  `getProgress`, optional `step`, `cleanup`; `Debug.ForceObjectives` (now `{}`).
+Earlier (still true)
 - Characters are loaded by MatchService (`CharacterAutoLoads = false`). Dead Pardners are ghosts.
-- Worm and ghosts have no humanoid character; client-owned, non-colliding models driven by `LinearVelocity`.
-- Greybox structures are walk-in; real models in `ReplicatedStorage/Assets` replace any greybox.
+- Worm and ghosts have no humanoid; client-owned models driven by `LinearVelocity`.
+- Extra remotes beyond §13: `Request_Sprint/Jump/SetDifficulty/SetAfk/SelectAbilities/GhostPush/UseHeld/
+  Dig/SafeCode`, `State_Inventory/Minigame/Safe`, `Ui_SafeKeypad`, `Pardner_Impulse`, `Worm_Launch`,
+  `Fx_Ability`, `Fx_Sound`, `Fx_Notify`.
+- Balloon escape = hold F at the ladder's foot. Sundown/airdrop details as in Phase 12 file headers.
 
 ## Known bugs / risks
 
-- Phase 11 (worm abilities) and the balloon escape are still untested in Studio; the rest of 9–12 has only
-  the automated solo pass above (no human feel-testing yet).
-- A zipline end the harpoon hooked high up (e.g. a watertower) can only be reached from up there; riding to
-  it drops you at the hit point (you fall if there's nothing to stand on).
-- Bullworm Rifle recoil is straight opposite the aim, so shooting at your feet launches you upward.
+- Untested by a human: everything in Phase 13; anything 2-player (Worm card + picker in a real round,
+  spectate, weights over several rounds, kill feed from a real grab); Phase 11 abilities; balloon escape.
+- Studio's play viewport during the MCP checks was portrait (296–540 px wide), narrower than real phones
+  (landscape). Layouts were fixed for it, but check the Device emulator at a landscape phone and 1080p.
+- No real sounds/music/particles/animations (`TODO(asset)`; UI and music ids empty). Lobby pieces are greybox.
+- Results match the local player by DisplayName. Each OpenSafe adds a `Request_SafeCode` limiter (tiny leak).
+- Zipline ends hooked high up drop you at the hit point. Rifle recoil can launch you upward.
 - `ContentId rbxassetid://203785492 ... Asset type does not match` warning on Play — not from our code.
-- Phase 12 risks: the balloon/ladder are greybox and may sit oddly on uneven ground; airdrop chests land at
-  sand height wherever the spot is.
-- No real sounds, particles, animations or art yet (`TODO(asset)` everywhere).
-- Cattlebugs and the worm pass through structures. A lost dug-up key never comes back.
-- Each match's OpenSafe adds a `Request_SafeCode` limiter to Net's list (tiny leak).
-- End screen matches players by DisplayName. Server ground check assumes R15; no `luau-lsp`.
+- MinigameHud, KeypadScreen and PuzzleMapHud still use the old plain style.
 - `rojo` on PATH is an old Aftman install (7.7.0-rc.1), not the Rokit-pinned 7.7.1.
 
 ## Exact next step
 
-1. User approves (or adjusts) the UI style from Phase 13 step 1 (`assets/renders/ui_style_sample.jpg`).
-2. Then Phase 13 step 2: round loop + intermission + lobby train-station greybox (map built far from the
-   lobby and cleaned up each round). Steps 3–6 follow, each with its own checkpoint and commit.
-3. Still owed from before: 2P tests of worm abilities, balloon escape, grab-related kits (CHECKLIST 10–12).
+1. User runs CHECKLIST.md Phase 13 steps 2–6 (2-player local server for roles, spectate, kill feed).
+2. Fix what they find; then restyle MinigameHud / KeypadScreen / PuzzleMapHud with the components.
+3. Still owed: 2P tests of worm abilities, balloon escape, grab-related kits (CHECKLIST 10–12).
+4. Create the game passes and paste their ids into `Config/Shop`; add sound / music ids.
