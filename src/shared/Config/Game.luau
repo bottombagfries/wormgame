@@ -89,6 +89,7 @@ return {
 
 	Debug = {
 		Enabled = true,
+		ShowUiSample = false, -- Phase 13: show the UI style sample screen on join
 		ShowMarkers = true, -- label every map marker
 		MarkerTransparency = 0.5,
 		LabelMaxDistance = 120,

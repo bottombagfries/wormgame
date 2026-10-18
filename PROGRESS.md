@@ -1,7 +1,7 @@
 # PROGRESS
 
-Last updated: 2026-10-17 (automated solo test pass of Phases 9–12 + fixes). Rewrite this file at the end of
-every phase (CLAUDE.md §17).
+Last updated: 2026-10-17 (Phase 13 step 1 — UI theme + components, awaiting style approval). Rewrite this
+file at the end of every phase (CLAUDE.md §17).
 
 ## Phases completed
 
@@ -28,6 +28,16 @@ every phase (CLAUDE.md §17).
   - Not testable solo: worm abilities (Phase 11), balloon escape, anything 2P.
 - **Art pass (2026-10-17):** all 94 assets have real low-poly models (Blender scripts → Open Cloud → Studio),
   verified in a solo playtest. Details, rules and Config size changes: `assets/ASSET_STATUS.md`.
+- **Phase 13 — Lobby & UI overhaul** (added to CLAUDE.md §15 and CHECKLIST.md; 6 steps).
+  - Step 1 done, **awaiting style approval**: `Config/Theme.luau` ("frontier notice board": paper panels on
+    dark wood, hard drop shadow, brass accent; fonts Antique for titles, Merriweather Heavy for buttons /
+    headings, Builder Sans for body + numbers — Arvo isn't available in Roblox). Components in
+    `Controllers/UI/Components/`: Style (corner/stroke/padding/text limits/shadowed/tween/screen), UiSound
+    (local UI sounds, `Ui*` keys in Config/Sounds, empty ids), Label, Panel (root + shadow + body, title
+    banner, popIn), Button (hover 1.05 / press 0.95, click/hover/error sounds, disabled state), Bar (ghost
+    fill, locked cap, pulse), Slot (key hint, selected stroke, cooldown overlay + seconds).
+    `UI/StyleSample.luau` shows them all when `Config.Game.Debug.ShowUiSample = true`. Capture:
+    `assets/renders/ui_style_sample.jpg` (checked at the ~540×710 Studio viewport = phone-ish).
 - Deferred by the spec ("Later"): wormlings, cosmetics, mobile controls, data saving.
 
 ## What each file does
@@ -114,7 +124,7 @@ Earlier phases (still true; the per-system detail is in each file's header comme
 
 ## Exact next step
 
-1. User re-syncs Rojo, then 2P tests what automation couldn't: climbing still works (input fix), worm
-   abilities (CHECKLIST Phase 11), balloon escape, Cymbal Monkey / Coffee Tin / Sonar against a real worm,
-   Quick Escape Knife and Rifle on a grab, Spirit Board with a ghost, Book of the Dead with a jar.
-2. Fix what's reported, then the "Final full-game test" in CHECKLIST, before any "Later" work or art/sounds.
+1. User approves (or adjusts) the UI style from Phase 13 step 1 (`assets/renders/ui_style_sample.jpg`).
+2. Then Phase 13 step 2: round loop + intermission + lobby train-station greybox (map built far from the
+   lobby and cleaned up each round). Steps 3–6 follow, each with its own checkpoint and commit.
+3. Still owed from before: 2P tests of worm abilities, balloon escape, grab-related kits (CHECKLIST 10–12).

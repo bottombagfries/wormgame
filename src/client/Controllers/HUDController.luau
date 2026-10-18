@@ -17,8 +17,10 @@ local TagDefs = require(ReplicatedStorage.Shared.Util.Tags)
 local CameraController = require(script.Parent.CameraController)
 local MatchController = require(script.Parent.MatchController)
 local PardnerMovementController = require(script.Parent.PardnerMovementController)
+local GameConfig = require(ReplicatedStorage.Shared.Config.Game)
 local ObjectivesHud = require(script.Parent.UI.ObjectivesHud)
 local PardnerHud = require(script.Parent.UI.PardnerHud)
+local StyleSample = require(script.Parent.UI.StyleSample)
 local WormHud = require(script.Parent.UI.WormHud)
 local WormController = require(script.Parent.WormController)
 local WormConfig = require(ReplicatedStorage.Shared.Config.Worm)
@@ -200,6 +202,9 @@ function HUDController.init()
 	hud = PardnerHud.create(playerGui)
 	wormHud = WormHud.create(playerGui)
 	objectivesHud = ObjectivesHud.create(playerGui)
+	if GameConfig.Debug.Enabled and GameConfig.Debug.ShowUiSample then
+		StyleSample.create(playerGui)
+	end
 end
 
 function HUDController.start()

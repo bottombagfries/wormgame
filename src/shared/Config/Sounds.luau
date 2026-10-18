@@ -24,6 +24,13 @@ local Sounds: { [string]: SoundDef } = {
 	Airdrop = { id = "", volume = 0.8, positional = true },
 	BalloonArrives = { id = "", volume = 1, positional = false },
 	Sundown = { id = "", volume = 1, positional = false },
+
+	-- UI (Phase 13): played on the local client only, never sent over the network. TODO(asset)
+	UiClick = { id = "", volume = 0.5, positional = false },
+	UiHover = { id = "", volume = 0.25, positional = false },
+	UiError = { id = "", volume = 0.5, positional = false },
+	UiObjective = { id = "", volume = 0.7, positional = false },
+	UiReveal = { id = "", volume = 0.9, positional = false },
 }
 
 return Sounds

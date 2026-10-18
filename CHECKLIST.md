@@ -163,6 +163,41 @@ Tick each box in Studio before moving on. Every phase also needs:
 - [ ] Sound hooks fire (even if they're placeholder IDs)
 - [ ] Full match with 3+ players from lobby to end screen, no errors
 
+## Phase 13 — Lobby & UI overhaul
+**Step 1 — Theme & components**
+- [ ] Sample panel, button and bar look like the approved western style
+- [ ] Buttons grow on hover, shrink on press, and play a click hook
+- [ ] Bar fill tweens, with a ghost fill trailing behind after a drop
+- [ ] Text stays readable at phone size and 1080p (Device emulator)
+
+**Step 2 — Round loop & lobby**
+- [ ] 1 player: lobby shows "Waiting for players"; 2P: intermission counts down
+- [ ] Countdown → roles → reveal → loadout → teleported to the map → match → results → back in the lobby
+- [ ] Map is far from the lobby and completely gone after the round (Workspace clean)
+- [ ] Lobby train station: platform, benches, ticket booth, big board with countdown + last result
+- [ ] Spawn pads work; invisible walls keep you in; no damage or combat in the lobby
+- [ ] Someone joining mid-round waits in the lobby
+
+**Step 3 — Role roll & reveal**
+- [ ] AFK players are never picked
+- [ ] Worm chance goes up each round you aren't the Worm, resets when you are
+- [ ] Full-screen role card with color, text, sound and animation
+- [ ] Worm gets the ability pick with a timer right after the card
+
+**Step 4 — Lobby HUD, spectate, AFK**
+- [ ] HUD shows countdown, player count, your Worm chance %
+- [ ] Shop / Inventory / Settings / Spectate / AFK buttons all open or toggle something
+- [ ] Spectate cycles living players and shows name + role
+
+**Step 5 — In-match HUD & toasts**
+- [ ] Pardner and Worm HUDs use the new theme, nothing overlaps at phone size
+- [ ] Toasts: "X was eaten", "Objective complete", "Sundown!"
+
+**Step 6 — Results, settings, shop**
+- [ ] Results: winner banner, escaped / died lists, round stats
+- [ ] Settings: music + SFX volume, camera sensitivity, worm mouth-view toggle, all saved for the session
+- [ ] Shop lists game passes; nothing in it changes Worm chance or gameplay
+
 ---
 
 ## Final full-game test

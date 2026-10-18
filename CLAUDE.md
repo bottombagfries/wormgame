@@ -569,6 +569,26 @@ lookout towers + chests with guarantees, structures + HP + scrap, dynamite explo
 
 **Phase 12 — Sundown effects, airdrops, balloon escape, polish, sounds hooks** (`-- TODO(asset)` sound ids in Config).
 
+**Phase 13 — Lobby & UI overhaul** (MM2-style round loop on one server; server-authoritative; every number in
+Config; UI built from `Config/Theme.luau` + `Controllers/UI/Components/`). Steps, each with its own checkpoint:
+1. **Theme + shared UI components** (Panel, Button, Bar, Label, Slot, Tween helpers, UI sound hooks).
+   ✅ CHECKPOINT: screen_capture of a sample panel / button / bar; user approves the style.
+2. **Round loop + intermission + lobby greybox.** Lobby → Intermission countdown (needs ≥ 2 players, else
+   "Waiting for players") → role roll → role reveal → worm loadout → teleport to the map → match → results →
+   back to the lobby. The map is built far from the lobby and fully cleaned up after each round. Lobby = a small
+   abandoned desert train station (platform, benches, ticket booth, big board with countdown + last result),
+   greyboxed through AssetService ids; spawn pads, invisible walls, no combat. Late joiners wait in the lobby.
+3. **Role roll + reveal + loadout.** Worm picked by weighted chance that grows each round a player isn't the
+   Worm; AFK players skipped. Full-screen role card ("YOU ARE THE WORM" / "YOU ARE A PARDNER": description,
+   color, sound, tween), then the worm's timed ability pick.
+4. **Lobby HUD + spectate + AFK.** Countdown, player count, your Worm chance %, buttons: Shop, Inventory /
+   Cosmetics, Settings, Spectate, AFK. Spectate cycles living players and shows name + role.
+5. **In-match HUD cleanup + toasts** for both roles (roblox-ui skill). Kill feed / event toasts ("X was eaten",
+   "Objective complete", "Sundown!").
+6. **Results + settings + shop.** Winner banner, escaped / died, round stats (fuel delivered, Pardners eaten, …).
+   Settings: music / SFX volume, camera sensitivity, worm first-person mouth view toggle. Shop = game passes,
+   cosmetic / convenience only — never paid Worm chance or any gameplay advantage.
+
 **Later / deferred:** Wormlings AI (5 types: Spicy, Icy, Grub, Onyx, Jr.; states Hunting/Investigating/Wandering;
 eggs hatch over time per difficulty table), cosmetics, mobile controls, data saving.
 
