@@ -51,6 +51,11 @@ file at the end of every phase (CLAUDE.md §17).
     `UI/RoleCard.luau` (role-colored band, title slam, description fade, Reveal sound; text in
     `Config.Lobby.RoleCards`). `UI/LoadoutScreen.luau` rebuilt: timer bar + 2-column ability cards with
     descriptions (new `description` field in Config/Abilities); Pardners get a "Worm is choosing" strip.
+  - Step 4 done: `LobbyController` + `UI/LobbyHud` (status strip top-center with countdown that pops in
+    the last 5 s, last result, host difficulty button; menu down the left: Shop, Cosmetics, Settings,
+    Spectate, AFK toggle; info card bottom-right: players, Worm chance %). Shown to anyone without a role.
+    `Components/Modal` (scrim + panel + X). `SpectateController` + `UI/SpectateHud` (cycles living
+    Pardners and Worm heads, name + role chip, auto-advances, stops at round end). Old `LobbyScreen` deleted.
 - Deferred by the spec ("Later"): wormlings, cosmetics, mobile controls, data saving.
 
 ## What each file does

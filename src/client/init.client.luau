@@ -16,6 +16,8 @@ local CONTROLLER_ORDER = {
 	"InputController",
 	"SoundController",
 	"MatchController",
+	"SpectateController",
+	"LobbyController",
 	"CameraController",
 	"PardnerMovementController",
 	"WormController",
