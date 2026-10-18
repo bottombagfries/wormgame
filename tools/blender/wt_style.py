@@ -12,7 +12,16 @@ import bmesh
 import bpy
 from mathutils import Vector
 
-PROJECT = r"C:\Users\Rgut2\Downloads\yaba"
+def _find_project():
+    # exec() gives no __file__, so take WT_PROJECT, else the first known checkout that exists.
+    candidates = [os.environ.get("WT_PROJECT", ""), r"C:\Users\james\Downloads\yaba", r"C:\Users\Rgut2\Downloads\yaba"]
+    for path in candidates:
+        if path and os.path.isdir(os.path.join(path, "tools", "blender")):
+            return path
+    raise RuntimeError("Set WT_PROJECT to the yaba checkout")
+
+
+PROJECT = _find_project()
 PALETTE_PNG = os.path.join(PROJECT, "assets", "textures", "WT_Palette.png")
 
 # Palette: name -> hex. Order = cell index in the 8x8 palette texture (row-major from the top-left).
