@@ -50,7 +50,7 @@ local REMOTES: { [string]: RemoteKind } = {
 	Fx_Play = "Event", -- (effectId: string, cframe: CFrame)
 	Fx_Ability = "Event", -- (abilityId: string, wormModel: Model, data) every client runs the ability's clientFx
 	Fx_Sound = "Event", -- (soundKey: string, position: Vector3?) every client plays Config.Sounds[soundKey]
-	Fx_Notify = "Event", -- (text: string) short on-screen message
+	Fx_Notify = "Event", -- (text: string, kind: Types.ToastKind?) a toast; no kind = a small personal hint
 }
 
 local Net = {}

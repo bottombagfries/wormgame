@@ -135,7 +135,7 @@ local function pen(bug: Bug)
 			descendant.Color = BugParams.PennedColor
 		end
 	end
-	notifyRemote:FireAllClients(`A cattlebug is in the pen ({delivered}/{#bugs})`)
+	notifyRemote:FireAllClients(`A cattlebug is in the pen ({delivered}/{#bugs})`, "Event")
 end
 
 local function stepBug(bug: Bug, dt: number, rng: Random)

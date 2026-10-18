@@ -1,6 +1,14 @@
 --!strict
--- Builds the Pardner HUD screen: health / stamina / grip bars, aim crosshair, compass.
--- Layout only; HUDController feeds it values. TODO(asset): replace with real UI art.
+-- The Pardner HUD (§14, restyled in Phase 13): a vitals card bottom-left (health / stamina with the locked
+-- part / grip), the aim crosshair, and a compass chip at top-center while aiming. On narrow screens the
+-- vitals sit above the inventory row instead of beside it. Layout only; HUDController feeds it.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Theme = require(ReplicatedStorage.Shared.Config.Theme)
+local Bar = require(script.Parent.Components.Bar)
+local Label = require(script.Parent.Components.Label)
+local Style = require(script.Parent.Components.Style)
 
 export type Hud = {
 	gui: ScreenGui,
@@ -9,138 +17,107 @@ export type Hud = {
 	setGrip: (value: number, max: number) -> (),
 	setAiming: (aiming: boolean) -> (),
 	setHeading: (text: string) -> (),
+	setCompact: (compact: boolean) -> (),
 }
 
-local BAR_SIZE = UDim2.fromOffset(260, 22)
-local BAR_GAP = 6
-local MARGIN = 20
-local BACK_COLOR = Color3.fromRGB(25, 25, 25)
-local HEALTH_COLOR = Color3.fromRGB(200, 60, 60)
-local STAMINA_COLOR = Color3.fromRGB(90, 190, 90)
-local GRIP_COLOR = Color3.fromRGB(230, 180, 60)
-local LOCKED_COLOR = Color3.fromRGB(90, 30, 30)
+local LOW_HEALTH = 0.25 -- the health bar pulses when it drops below this share
+local WIDE_POSITION = UDim2.fromScale(0.015, 0.975)
+local COMPACT_POSITION = UDim2.fromScale(0.015, 0.84)
 
 local PardnerHud = {}
 
-local function fraction(value: number, max: number): number
-	return if max > 0 then math.clamp(value / max, 0, 1) else 0
-end
-
-local function makeBar(parent: Instance, name: string, color: Color3, order: number)
-	local back = Instance.new("Frame")
-	back.Name = name
-	back.Size = BAR_SIZE
-	back.BackgroundColor3 = BACK_COLOR
-	back.BackgroundTransparency = 0.3
-	back.BorderSizePixel = 0
-	back.LayoutOrder = order
-	back.Parent = parent
-
-	local fill = Instance.new("Frame")
-	fill.Name = "Fill"
-	fill.Size = UDim2.fromScale(1, 1)
-	fill.BackgroundColor3 = color
-	fill.BorderSizePixel = 0
-	fill.Parent = back
-
-	-- Covers the right-hand part of the bar that is currently unavailable.
-	local locked = Instance.new("Frame")
-	locked.Name = "Locked"
-	locked.AnchorPoint = Vector2.new(1, 0)
-	locked.Position = UDim2.fromScale(1, 0)
-	locked.Size = UDim2.fromScale(0, 1)
-	locked.BackgroundColor3 = LOCKED_COLOR
-	locked.BorderSizePixel = 0
-	locked.Parent = back
-
-	local label = Instance.new("TextLabel")
-	label.Name = "Label"
-	label.Size = UDim2.fromScale(1, 1)
-	label.BackgroundTransparency = 1
-	label.TextColor3 = Color3.new(1, 1, 1)
-	label.TextStrokeTransparency = 0.5
-	label.Font = Enum.Font.SourceSansBold
-	label.TextSize = 16
-	label.ZIndex = 2
-	label.Parent = back
-
-	return fill, locked, label
-end
-
 function PardnerHud.create(parent: Instance): Hud
-	local gui = Instance.new("ScreenGui")
-	gui.Name = "PardnerHud"
-	gui.ResetOnSpawn = false
-	gui.IgnoreGuiInset = true
+	local colors = Theme.Colors
+	local gui = Style.screen("PardnerHud", 2)
 
-	local bars = Instance.new("Frame")
-	bars.Name = "Bars"
-	bars.AnchorPoint = Vector2.new(0, 1)
-	bars.Position = UDim2.new(0, MARGIN, 1, -MARGIN)
-	bars.Size = UDim2.fromOffset(BAR_SIZE.X.Offset, BAR_SIZE.Y.Offset * 3 + BAR_GAP * 2)
-	bars.BackgroundTransparency = 1
-	bars.Parent = gui
-
+	local root = Instance.new("Frame")
+	root.Name = "Vitals"
+	root.AnchorPoint = Vector2.new(0, 1)
+	root.Position = WIDE_POSITION
+	root.Size = UDim2.fromScale(0.24, 0.15)
+	root.ZIndex = 2
+	root.Parent = gui
+	local limits = Instance.new("UISizeConstraint")
+	limits.MinSize = Vector2.new(200, 90)
+	limits.MaxSize = Vector2.new(380, 150)
+	limits.Parent = root
+	local body = Style.shadowed(root, Theme.Corner.Panel)
+	body.BackgroundColor3 = colors.Wood
+	Style.corner(body, Theme.Corner.Panel)
+	Style.stroke(body, colors.WoodDark, Theme.Stroke.Panel)
+	Style.padding(body, Theme.Padding.Button)
 	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0.06, 0)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Padding = UDim.new(0, BAR_GAP)
-	layout.Parent = bars
+	layout.VerticalAlignment = Enum.VerticalAlignment.Center
+	layout.Parent = body
 
-	local healthFill, _, healthLabel = makeBar(bars, "Health", HEALTH_COLOR, 1)
-	local staminaFill, staminaLocked, staminaLabel = makeBar(bars, "Stamina", STAMINA_COLOR, 2)
-	local gripFill, _, gripLabel = makeBar(bars, "Grip", GRIP_COLOR, 3)
+	local barSize = UDim2.fromScale(1, 0.28)
+	local health = Bar.new(body, { label = "Health", color = colors.Health, size = barSize, order = 1 })
+	local stamina = Bar.new(body, { label = "Stamina", color = colors.Stamina, size = barSize, order = 2 })
+	local grip = Bar.new(body, { label = "Grip", color = colors.Grip, size = barSize, order = 3 })
 
 	local crosshair = Instance.new("Frame")
 	crosshair.Name = "Crosshair"
 	crosshair.AnchorPoint = Vector2.new(0.5, 0.5)
 	crosshair.Position = UDim2.fromScale(0.5, 0.5)
-	crosshair.Size = UDim2.fromOffset(6, 6)
-	crosshair.BackgroundColor3 = Color3.new(1, 1, 1)
-	crosshair.BorderSizePixel = 0
+	crosshair.Size = UDim2.fromOffset(10, 10)
+	crosshair.BackgroundTransparency = 1
 	crosshair.Visible = false
 	crosshair.Parent = gui
+	Style.corner(crosshair, Theme.Corner.Pill)
+	Style.stroke(crosshair, colors.PaperLight, 2)
 
-	local crosshairCorner = Instance.new("UICorner")
-	crosshairCorner.CornerRadius = UDim.new(1, 0)
-	crosshairCorner.Parent = crosshair
-
-	local compass = Instance.new("TextLabel")
+	local compass = Instance.new("Frame")
 	compass.Name = "Compass"
 	compass.AnchorPoint = Vector2.new(0.5, 0)
-	compass.Position = UDim2.new(0.5, 0, 0, MARGIN * 2)
-	compass.Size = UDim2.fromOffset(80, 30)
-	compass.BackgroundColor3 = BACK_COLOR
-	compass.BackgroundTransparency = 0.3
-	compass.BorderSizePixel = 0
-	compass.TextColor3 = Color3.new(1, 1, 1)
-	compass.Font = Enum.Font.SourceSansBold
-	compass.TextSize = 22
+	compass.Position = UDim2.fromScale(0.5, 0.1)
+	compass.Size = UDim2.fromScale(0.07, 0.05)
+	compass.BackgroundColor3 = colors.WoodDark
 	compass.Visible = false
 	compass.Parent = gui
+	local compassLimits = Instance.new("UISizeConstraint")
+	compassLimits.MinSize = Vector2.new(64, 32)
+	compassLimits.Parent = compass
+	Style.corner(compass, Theme.Corner.Pill)
+	Style.stroke(compass, colors.Accent, Theme.Stroke.Button)
+	local heading = Label.new(compass, {
+		font = Theme.Fonts.Heading,
+		color = colors.Accent,
+		size = UDim2.fromScale(0.8, 0.75),
+		position = UDim2.fromScale(0.5, 0.5),
+		anchor = Vector2.new(0.5, 0.5),
+		maxTextSize = 24,
+	})
 
 	gui.Parent = parent
 
+	local lastHealthShare = 1
 	return {
 		gui = gui,
 		setHealth = function(value: number, max: number)
-			healthFill.Size = UDim2.fromScale(fraction(value, max), 1)
-			healthLabel.Text = `Health {math.ceil(value)} / {math.ceil(max)}`
+			health.set(value, max)
+			local share = if max > 0 then value / max else 0
+			if share < LOW_HEALTH and share < lastHealthShare then
+				health.pulse()
+			end
+			lastHealthShare = share
 		end,
 		setStamina = function(value: number, cap: number, max: number)
-			staminaFill.Size = UDim2.fromScale(fraction(value, max), 1)
-			staminaLocked.Size = UDim2.fromScale(1 - fraction(cap, max), 1)
-			staminaLabel.Text = `Stamina {math.floor(value + 0.5)} / {math.floor(cap + 0.5)}`
+			stamina.set(value, max, cap)
 		end,
 		setGrip = function(value: number, max: number)
-			gripFill.Size = UDim2.fromScale(fraction(value, max), 1)
-			gripLabel.Text = `Grip {math.floor(value + 0.5)}`
+			grip.set(value, max)
 		end,
 		setAiming = function(aiming: boolean)
 			crosshair.Visible = aiming
 			compass.Visible = aiming
 		end,
 		setHeading = function(text: string)
-			compass.Text = text
+			heading.Text = text
+		end,
+		setCompact = function(compact: boolean)
+			root.Position = if compact then COMPACT_POSITION else WIDE_POSITION
 		end,
 	}
 end

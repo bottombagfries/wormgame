@@ -442,7 +442,7 @@ local function runPlaying(): Types.MatchResult
 			PardnerService.sundownTopUp()
 			Lighting.ClockTime = GameConfig.Sundown.NightClockTime -- TODO(asset): proper night lighting
 			SoundCue.play("Sundown")
-			notifyRemote:FireAllClients("The sun has set. The Worm grows stronger...")
+			notifyRemote:FireAllClients("Sundown! The Worm grows stronger...", "Sundown")
 			broadcast()
 			sundown:fire()
 		end

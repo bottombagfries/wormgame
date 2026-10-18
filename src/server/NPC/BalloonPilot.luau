@@ -44,7 +44,7 @@ local checkTimer = 0
 local rng = Random.new()
 
 local function notifyAll(text: string)
-	Net.event("Fx_Notify"):FireAllClients(text)
+	Net.event("Fx_Notify"):FireAllClients(text, "Event")
 end
 
 local function hoverOver(point: Vector3): Vector3

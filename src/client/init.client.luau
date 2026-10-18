@@ -15,6 +15,7 @@ type Controller = {
 local CONTROLLER_ORDER = {
 	"InputController",
 	"SoundController",
+	"ToastController",
 	"MatchController",
 	"SpectateController",
 	"LobbyController",

@@ -24,6 +24,7 @@ type Active = {
 local ObjectiveService = {}
 
 local objectivesRemote: RemoteEvent
+local notifyRemote: RemoteEvent
 local active: { Active } = {}
 local lastSent: { Types.ObjectiveProgress } = {}
 local pollTimer = 0
@@ -77,6 +78,20 @@ end
 local function update(force: boolean?)
 	local list = collectProgress()
 	if force or changed(list) then
+		-- A toast for every objective that just finished (not on the first send of a match).
+		if not force then
+			for _, progress in list do
+				local wasDone = false
+				for _, previous in lastSent do
+					if previous.id == progress.id then
+						wasDone = previous.done
+					end
+				end
+				if progress.done and not wasDone then
+					notifyRemote:FireAllClients(`Objective complete: {progress.displayName}`, "Objective")
+				end
+			end
+		end
 		lastSent = list
 		objectivesRemote:FireAllClients(list)
 	end
@@ -89,6 +104,7 @@ local function update(force: boolean?)
 		end
 		leverUnlocked = true
 		TrainService.unlockLever()
+		notifyRemote:FireAllClients("Every objective is done - pull the Train's lever!", "Objective")
 	end
 end
 
@@ -162,6 +178,7 @@ end
 
 function ObjectiveService.init()
 	objectivesRemote = Net.event("State_Objectives")
+	notifyRemote = Net.event("Fx_Notify")
 end
 
 function ObjectiveService.start()

@@ -238,4 +238,7 @@ export type MatchPhase = "Lobby" | "Intermission" | "RoleAssign" | "WormLoadout"
 
 export type Role = "Pardner" | "Worm"
 
+-- How a Fx_Notify toast is styled (Config/Theme colors; Config.Toasts timings).
+export type ToastKind = "Info" | "Kill" | "Objective" | "Sundown" | "Revive" | "Event"
+
 return {}

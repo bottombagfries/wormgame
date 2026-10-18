@@ -220,6 +220,7 @@ local function onDied(player: Player)
 				removeBody(player, character)
 			end
 			notifyRemote:FireClient(player, "You were eaten. Your heart jar will appear when the Worm digests you")
+			notifyRemote:FireAllClients(`{player.DisplayName} was eaten`, "Kill")
 		else
 			spawnJar(death, position + Vector3.yAxis * PardnerConfig.JarSpawnHeight)
 			if character then
@@ -230,6 +231,7 @@ local function onDied(player: Player)
 				end)
 			end
 			notifyRemote:FireClient(player, "You died. A Pardner can carry your heart jar to the Church")
+			notifyRemote:FireAllClients(`{player.DisplayName} died`, "Kill")
 		end
 		spawnGhost(player, position + Vector3.yAxis * GhostConfig.SpawnHeight)
 	end)
@@ -243,7 +245,7 @@ local function finishDigestion(death: Death)
 	local sandY = Ground.sandBelow(position)
 	local y = math.max(position.Y, sandY or position.Y) + PardnerConfig.JarSpawnHeight
 	spawnJar(death, Vector3.new(position.X, y, position.Z))
-	notifyRemote:FireAllClients(`{death.player.DisplayName}'s heart jar has appeared`)
+	notifyRemote:FireAllClients(`{death.player.DisplayName}'s heart jar has appeared`, "Event")
 end
 
 -- Revive ----------------------------------------------------------------------------------------
@@ -274,7 +276,7 @@ function ReviveService.revive(player: Player, cframe: CFrame): boolean
 	-- Reviving resets the depart countdown (§9). The balloon notices the alive count change itself.
 	TrainService.restartDepartTimer()
 	SoundCue.play("Revive", cframe.Position)
-	notifyRemote:FireAllClients(`{player.DisplayName} has been revived!`)
+	notifyRemote:FireAllClients(`{player.DisplayName} has been revived!`, "Revive")
 	revived:fire(player)
 	return true
 end

@@ -99,6 +99,7 @@ Theme.Sizes = {
 	ScreenMargin = 0.02, -- fraction of the screen kept clear around the HUD
 	BarHeight = 0.034, -- fraction of screen height
 	SlotSize = 0.07, -- fraction of screen height (square)
+	CompactWidth = 760, -- px: narrower screens stack the vitals card above the bottom-center row
 }
 
 Theme.Tween = {
@@ -122,6 +123,16 @@ Theme.Sounds = {
 	Error = "UiError",
 	Objective = "UiObjective",
 	Reveal = "UiReveal",
+	Kill = "UiKill",
+}
+
+-- Toasts and the kill feed (ToastController).
+Theme.Toast = {
+	Seconds = 4, -- how long a toast stays up
+	BigSeconds = 5, -- Sundown / objective banners
+	MaxVisible = 4, -- older toasts are dropped when more arrive
+	HintSeconds = 2.5, -- personal hints (no kind) above the inventory
+	SlideOffset = 0.04, -- toasts slide in from this far above (fraction of the screen)
 }
 
 return Theme

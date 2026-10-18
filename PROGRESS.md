@@ -56,6 +56,16 @@ file at the end of every phase (CLAUDE.md §17).
     Spectate, AFK toggle; info card bottom-right: players, Worm chance %). Shown to anyone without a role.
     `Components/Modal` (scrim + panel + X). `SpectateController` + `UI/SpectateHud` (cycles living
     Pardners and Worm heads, name + role chip, auto-advances, stops at round end). Old `LobbyScreen` deleted.
+  - Step 5 done: PardnerHud (wood vitals card bottom-left, health pulses under 25 %, ring crosshair, compass
+    chip), InventoryHud (kit + bag Slots bottom-center, big items span slots, hands pill, detector pill,
+    paper hover label), ObjectivesHud (paper checklist top-right with check pops, sundown clock chip
+    top-center that turns to night), WormHud (status card + ability Slots with cooldown overlays that pop
+    when ready), GhostHud — all from Components. Narrow screens (< `Theme.Sizes.CompactWidth` 760 px):
+    vitals stack above the bottom row, clock moves under the Roblox buttons, toasts stack up mid-screen;
+    `Style.fitRow` shrinks slot rows to fit. `ToastController` + `UI/Toasts`: `Fx_Notify(text, kind?)` —
+    kinds Kill / Objective / Sundown / Revive / Event get a toast (Objective + Sundown big), no kind = hint.
+    Server now sends "X was eaten" / "X died", "Objective complete: …", "Every objective is done…",
+    "Sundown!", revives, heart jars, balloon, cattlebug pen, safe. `Bar.set` skips unchanged values.
 - Deferred by the spec ("Later"): wormlings, cosmetics, mobile controls, data saving.
 
 ## What each file does

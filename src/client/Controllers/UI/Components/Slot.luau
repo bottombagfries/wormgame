@@ -83,7 +83,7 @@ function Slot.new(parent: Instance, options: Options): Slot
 			text = options.key,
 			font = Theme.Fonts.Numbers,
 			color = colors.TextLight,
-			size = UDim2.fromScale(0.34, 0.3),
+			size = UDim2.fromScale(0.7, 0.28),
 			position = UDim2.fromScale(0.04, 0.03),
 			align = Enum.TextXAlignment.Left,
 			outline = true,

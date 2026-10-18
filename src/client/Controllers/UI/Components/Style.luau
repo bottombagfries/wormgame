@@ -98,6 +98,24 @@ function Style.scaler(gui: GuiObject): UIScale
 	return scale
 end
 
+-- Sizes a horizontal row of `count` square slots so they always fit across `widthShare` of the screen:
+-- each slot is as tall as `heightShare` of the screen, capped at [minPx, maxPx] and shrunk if too wide.
+function Style.fitRow(
+	row: GuiObject,
+	gui: ScreenGui,
+	count: number,
+	gap: number,
+	heightShare: number,
+	minPx: number,
+	maxPx: number
+)
+	local screen = gui.AbsoluteSize
+	local widthShare = row.Size.X.Scale
+	local wanted = math.clamp(screen.Y * heightShare, minPx, maxPx)
+	local fits = if count > 0 then (screen.X * widthShare - gap * (count - 1)) / count else wanted
+	row.Size = UDim2.new(widthShare, 0, 0, math.floor(math.min(wanted, fits)))
+end
+
 -- A ScreenGui set up the same way everywhere: safe-area insets, no reset on spawn.
 function Style.screen(name: string, displayOrder: number?): ScreenGui
 	local gui = Instance.new("ScreenGui")

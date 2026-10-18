@@ -18,6 +18,7 @@ local CameraController = require(script.Parent.CameraController)
 local MatchController = require(script.Parent.MatchController)
 local PardnerMovementController = require(script.Parent.PardnerMovementController)
 local GameConfig = require(ReplicatedStorage.Shared.Config.Game)
+local Theme = require(ReplicatedStorage.Shared.Config.Theme)
 local ObjectivesHud = require(script.Parent.UI.ObjectivesHud)
 local PardnerHud = require(script.Parent.UI.PardnerHud)
 local StyleSample = require(script.Parent.UI.StyleSample)
@@ -29,6 +30,21 @@ local Keybinds = require(ReplicatedStorage.Shared.Config.Keybinds)
 
 local HEADINGS = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" } -- north is -Z
 local CORE_GUI_RETRIES = 10
+
+-- Short labels for slot key hints (anything not listed uses its KeyCode name).
+local KEY_LABELS: { [string]: string } = {
+	One = "1",
+	Two = "2",
+	Three = "3",
+	LeftShift = "Shift",
+	Space = "Spc",
+	MouseButton1 = "LMB",
+	MouseButton2 = "RMB",
+}
+
+local function shortKey(bind: Enum.KeyCode | Enum.UserInputType): string
+	return KEY_LABELS[bind.Name] or bind.Name
+end
 
 local HUDController = {}
 
@@ -77,23 +93,17 @@ local function updateMatchPanel()
 	end
 
 	local now = Workspace:GetServerTimeNow()
-	objectivesHud.setHeader(`{MatchController.getRole()}   -   {state.difficulty}`)
+	local role = MatchController.getRole()
+	objectivesHud.setHeader(`{string.upper(if role == "Worm" then "The Worm" else role)} - {state.difficulty}`, role)
 
-	local abilities = player:GetAttribute("Abilities")
 	local sundownAt = state.sundownAt
-	local sundown = if state.night
-		then "Night has fallen"
-		elseif sundownAt then `Sundown in {formatClock(sundownAt - now)}`
-		else "No sundown"
-	if typeof(abilities) == "string" and abilities ~= "" then
-		sundown ..= `\nAbilities: {string.gsub(abilities, ",", ", ")}`
-	end
-	objectivesHud.setSundown(sundown)
+	local sundown = if state.night then "Night" elseif sundownAt then formatClock(sundownAt - now) else "--:--"
+	objectivesHud.setSundown(sundown, state.night)
 	objectivesHud.setStatus(trainStatus(now))
 end
 
 -- The worm's ability bar (§14): key, name and cooldown for the five defaults and the two picks.
-local function abilityLines(worm: Model): string
+local function abilityViews(worm: Model): { WormHud.AbilityView }
 	local ids = {}
 	for id, def in Abilities do
 		if def.kind == "Default" then
@@ -108,7 +118,7 @@ local function abilityLines(worm: Model): string
 	for _, id in ids do
 		local action = Abilities[id].action
 		local binds = action and Keybinds[action]
-		keys[id] = if binds then binds[1].Name else "?"
+		keys[id] = if binds then shortKey(binds[1]) else "?"
 	end
 	if typeof(picks) == "string" then
 		for id in string.gmatch(picks, "[^,]+") do
@@ -116,19 +126,25 @@ local function abilityLines(worm: Model): string
 			local binds = Keybinds[pickActions[pickIndex] or ""]
 			if Abilities[id] then
 				table.insert(ids, id)
-				keys[id] = if binds then binds[1].Name else "?"
+				keys[id] = if binds then shortKey(binds[1]) else "?"
 			end
 		end
 	end
 
 	local now = Workspace:GetServerTimeNow()
-	local lines = {}
+	local nightMult = if MatchController.getState().night then WormConfig.NightCooldownMult else 1
+	local views: { WormHud.AbilityView } = {}
 	for _, id in ids do
-		local left = (numberAttribute(worm, `Cooldown_{id}`) or 0) - now
-		local status = if left > 0 then string.format("%.0fs", math.ceil(left)) else "ready"
-		table.insert(lines, `[{keys[id]}] {Abilities[id].displayName}: {status}`)
+		local left = math.max(0, (numberAttribute(worm, `Cooldown_{id}`) or 0) - now)
+		table.insert(views, {
+			id = id,
+			key = keys[id],
+			name = Abilities[id].displayName,
+			remaining = left,
+			total = math.max(Abilities[id].cooldown * nightMult, left),
+		})
 	end
-	return table.concat(lines, "\n")
+	return views
 end
 
 local function updateWorm()
@@ -166,15 +182,20 @@ local function updateWorm()
 				break
 			end
 		end
-		wormHud.setRing(`Hurt: stuck underground. Healing ring {index} of {#rings} - move away to heal faster`)
+		wormHud.setRing(`Hurt! Stuck underground - ring {index} of {#rings}; move away to heal faster`)
 	else
 		wormHud.setRing("")
 	end
 
-	wormHud.setAbilities(abilityLines(worm))
+	wormHud.setAbilities(abilityViews(worm))
 end
 
 local function update()
+	local viewport = Workspace.CurrentCamera and Workspace.CurrentCamera.ViewportSize
+	local compact = viewport ~= nil and viewport.X < Theme.Sizes.CompactWidth
+	hud.setCompact(compact)
+	wormHud.setCompact(compact)
+	objectivesHud.setCompact(compact)
 	local isPardner = MatchController.isPardner()
 	hud.gui.Enabled = isPardner
 	if isPardner then

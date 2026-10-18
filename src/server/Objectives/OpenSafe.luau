@@ -78,7 +78,7 @@ local function notify(player: Player?, text: string)
 	if player then
 		notifyRemote:FireClient(player, text)
 	else
-		notifyRemote:FireAllClients(text)
+		notifyRemote:FireAllClients(text, "Event")
 	end
 end
 

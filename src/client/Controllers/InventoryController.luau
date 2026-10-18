@@ -19,6 +19,7 @@ local TagDefs = require(ReplicatedStorage.Shared.Util.Tags)
 local CameraController = require(script.Parent.CameraController)
 local InputController = require(script.Parent.InputController)
 local MatchController = require(script.Parent.MatchController)
+local ToastController = require(script.Parent.ToastController)
 local InventoryHud = require(script.Parent.UI.InventoryHud)
 
 local Tags = TagDefs.Tags
@@ -186,7 +187,7 @@ local function onAction(action: string)
 			-- Nothing to pick up, but a Shovel in the kit slot: hold to dig (§10.2).
 			digging = true
 			Net.event("Request_Dig"):FireServer(true)
-			hud.notify("Digging... (keep holding E)")
+			ToastController.hint("Digging... (keep holding E)")
 		end
 	elseif action == "Drop" then
 		if state.hand then
@@ -269,9 +270,6 @@ function InventoryController.start()
 	Net.event("State_Inventory").OnClientEvent:Connect(function(serverState: Types.InventoryState)
 		state = serverState
 		hud.setState(state)
-	end)
-	Net.event("Fx_Notify").OnClientEvent:Connect(function(text: string)
-		hud.notify(text)
 	end)
 	InputController.actionPressed:connect(onAction)
 

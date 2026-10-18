@@ -90,10 +90,17 @@ function Bar.new(parent: Instance, options: Options): Bar
 	local scale = Style.scaler(track)
 	local shown = 1
 	local ghostToken = 0
+	local lastKey = ""
 
 	return {
 		frame = track,
 		set = function(value: number, max: number, cap: number?)
+			-- HUDs call this every frame; only react when something visible changed.
+			local key = `{math.floor(value * 10)}:{max}:{cap or -1}`
+			if key == lastKey then
+				return
+			end
+			lastKey = key
 			local target = fraction(value, max)
 			Style.tween(fill, Theme.Tween.Bar, { Size = UDim2.fromScale(target, 1) })
 			if target < shown then

@@ -31,6 +31,7 @@ local Sounds: { [string]: SoundDef } = {
 	UiError = { id = "", volume = 0.5, positional = false },
 	UiObjective = { id = "", volume = 0.7, positional = false },
 	UiReveal = { id = "", volume = 0.9, positional = false },
+	UiKill = { id = "", volume = 0.6, positional = false }, -- TODO(asset): kill-feed sting
 }
 
 return Sounds
