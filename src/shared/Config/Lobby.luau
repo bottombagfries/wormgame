@@ -42,6 +42,9 @@ return {
 		{ id = "LobbyGround", position = v3(0, -2, 0) },
 		{ id = "LobbyTrack", position = v3(0, 0, -16) },
 		{ id = "LobbyPlatform", position = v3(0, 0, 0) },
+		-- Steps down from each end of the platform (their low end faces away from it)
+		{ id = "LobbySteps", position = v3(-51, 0, 0), yaw = 90 },
+		{ id = "LobbySteps", position = v3(51, 0, 0), yaw = -90 },
 		{ id = "LobbyDepot", position = v3(0, 0, 17) },
 		{ id = "LobbyBoard", position = v3(0, 3, 6.5) },
 		{ id = "LobbyTicketBooth", position = v3(-34, 3, 3) },

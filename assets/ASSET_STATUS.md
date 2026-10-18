@@ -1,6 +1,6 @@
 # ASSET STATUS
 
-**All 102 assets in `Config/Assets.luau` have real models** (50 items, 27 structures, 8 lobby, 5 characters, 12 effects),
+**All 103 assets in `Config/Assets.luau` have real models** (50 items, 27 structures, 9 lobby, 5 characters, 12 effects),
 uploaded, imported into `ReplicatedStorage/Assets/*` and checked in play (2026-10-17). Studio models live in
 the place file, not in Git: **save the place after any import.** Ids: `src/shared/Config/AssetIds.luau`.
 
@@ -48,6 +48,7 @@ Barrel, Crate, Watertower, Traincar, Stagecoach and cacti around the station.
 | LobbyTicketBooth | 8 × 10 × 6 | 129243702915770 | Wall 88534139727081, Roof 115266202407703, Detail 86369668494112 | 126 | imported |
 | LobbyBench | 7 × 2.5 × 2 | 89643827205478 | LobbyBench 75648135159826 | 132 | imported |
 | LobbyLamp | 1.5 × 10 × 1.5 | 107570775533141 | LobbyLamp 116556373681543 | 112 | imported (new id) |
+| LobbySteps | 8 × 3 × 6 | 72260182790306 | LobbySteps 130170019305368 | 132 | imported; one at each platform end, Hull = walkable ramp |
 
 ## Verified in play (solo)
 - Every item, structure, character and effect spawned in a match is the mesh (0 greyboxes on the map).

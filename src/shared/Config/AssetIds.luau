@@ -96,6 +96,7 @@ return {
 		LobbyBench = { mesh = 75648135159826, model = 89643827205478 },
 		LobbyGround = { mesh = 122022394204587, model = 127883280147723 },
 		LobbyLamp = { mesh = 116556373681543, model = 107570775533141 },
+		LobbySteps = { mesh = 130170019305368, model = 72260182790306 },
 	} :: { [string]: MeshRecord },
 
 	-- Models made of several named MeshParts (structures): part name -> MeshId. Wall/Roof/Trim/Kindling/Rails

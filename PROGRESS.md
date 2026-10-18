@@ -12,7 +12,8 @@ Rewrite this file at the end of every phase (CLAUDE.md §17).
   objective, every kit, airdrop, night). Not testable solo: worm abilities, balloon escape, anything 2P.
 - **Art pass (2026-10-17):** all 94 assets have real low-poly models; see `assets/ASSET_STATUS.md`.
 - **Lobby models (2026-10-18):** 8 lobby assets modelled, uploaded and imported (ground, track, platform,
-  depot, departures board with a `Screen` part, ticket booth, bench, new `LobbyLamp`); the station layout now
+  depot, departures board with a `Screen` part, ticket booth, bench, new `LobbyLamp`, `LobbySteps` at both
+  platform ends — walk-tested); the station layout now
   also reuses the map's watertower, a derelict traincar, a stagecoach, barrels, crates and cacti. 0 greyboxes.
 - **Phase 13 — Lobby & UI overhaul** (CLAUDE.md §15, CHECKLIST.md). All six steps built, self-tested solo
   through the Studio MCP (selene/stylua clean, no script errors), one commit per step:
@@ -84,7 +85,6 @@ Earlier (still true)
 - Studio's play viewport during the MCP checks was portrait (296–540 px wide), narrower than real phones
   (landscape). Layouts were fixed for it, but check the Device emulator at a landscape phone and 1080p.
 - No real sounds/music/particles/animations (`TODO(asset)`; UI and music ids empty).
-- The lobby platform is 3 studs tall, so getting back up from the track side needs a jump (no steps yet).
 - Results match the local player by DisplayName. Each OpenSafe adds a `Request_SafeCode` limiter (tiny leak).
 - Zipline ends hooked high up drop you at the hit point. Rifle recoil can launch you upward.
 - `ContentId rbxassetid://203785492 ... Asset type does not match` warning on Play — not from our code.

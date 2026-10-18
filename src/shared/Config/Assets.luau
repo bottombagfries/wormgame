@@ -132,6 +132,7 @@ local Assets: { [string]: AssetDef } = {
 	LobbyTicketBooth = { folder = "Structures", size = v3(8, 10, 6), color = rgb(170, 70, 50) },
 	LobbyBench = { folder = "Structures", size = v3(7, 2.5, 2), color = WOOD },
 	LobbyLamp = { folder = "Structures", size = v3(1.5, 10, 1.5), color = rgb(46, 43, 42) },
+	LobbySteps = { folder = "Structures", size = v3(8, 3, 6), color = WOOD },
 
 	-- Characters
 	WormHead = { folder = "Characters", size = v3(10, 10, 10), color = WORM, shape = Ball },
