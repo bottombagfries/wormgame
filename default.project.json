@@ -1,0 +1,26 @@
+{
+  "name": "Wormtown",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": { "$path": "src/shared" },
+      "Assets": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true,
+        "Items": { "$className": "Folder", "$ignoreUnknownInstances": true },
+        "Structures": { "$className": "Folder", "$ignoreUnknownInstances": true },
+        "Characters": { "$className": "Folder", "$ignoreUnknownInstances": true },
+        "Effects": { "$className": "Folder", "$ignoreUnknownInstances": true }
+      }
+    },
+    "ServerScriptService": { "Server": { "$path": "src/server" } },
+    "StarterPlayer": {
+      "$properties": { "EnableMouseLockOption": false },
+      "StarterPlayerScripts": { "Client": { "$path": "src/client" } }
+    },
+    "Workspace": {
+      "$ignoreUnknownInstances": true,
+      "MapTemplate": { "$className": "Folder", "$ignoreUnknownInstances": true }
+    }
+  }
+}
