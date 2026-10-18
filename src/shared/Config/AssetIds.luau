@@ -92,6 +92,10 @@ return {
 		TrainKeyhole = { mesh = 130845918075405, model = 122365453924700 },
 		TrainLever = { mesh = 87766750666386, model = 77514202109228 },
 		VendingMachine = { mesh = 73702795187202, model = 109386727824263 },
+		-- Lobby station (Phase 13)
+		LobbyBench = { mesh = 75648135159826, model = 89643827205478 },
+		LobbyGround = { mesh = 122022394204587, model = 127883280147723 },
+		LobbyLamp = { mesh = 116556373681543, model = 107570775533141 },
 	} :: { [string]: MeshRecord },
 
 	-- Models made of several named MeshParts (structures): part name -> MeshId. Wall/Roof/Trim/Kindling/Rails
@@ -195,5 +199,24 @@ return {
 				Tank = 128409049898691,
 			},
 		},
+		-- Lobby station (Phase 13): every part textured; Detail does not collide; LobbyBoard.Screen holds the
+		-- departures text (SurfaceGui on its Front face).
+		LobbyBoard = {
+			model = 100961181328186,
+			parts = { Detail = 70857325126277, Frame = 72285319738380, Screen = 86099192794400 },
+		},
+		LobbyDepot = {
+			model = 113045279668002,
+			parts = { Detail = 115081921873503, Roof = 82245410907499, Wall = 130460289893418 },
+		},
+		LobbyPlatform = {
+			model = 75240283348282,
+			parts = { Base = 88642964795908, Deck = 100885071806699, Detail = 74473247410422 },
+		},
+		LobbyTicketBooth = {
+			model = 129243702915770,
+			parts = { Detail = 86369668494112, Roof = 115266202407703, Wall = 88534139727081 },
+		},
+		LobbyTrack = { model = 123769058159554, parts = { Rails = 126588210309214, Ties = 113050319227583 } },
 	} :: { [string]: { model: number, parts: { [string]: number } } },
 }

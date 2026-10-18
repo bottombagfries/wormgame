@@ -11,6 +11,9 @@ Rewrite this file at the end of every phase (CLAUDE.md §17).
   RepairTracks confirmed by the user; the rest passed an automated solo MCP pass on 2026-10-17 (every
   objective, every kit, airdrop, night). Not testable solo: worm abilities, balloon escape, anything 2P.
 - **Art pass (2026-10-17):** all 94 assets have real low-poly models; see `assets/ASSET_STATUS.md`.
+- **Lobby models (2026-10-18):** 8 lobby assets modelled, uploaded and imported (ground, track, platform,
+  depot, departures board with a `Screen` part, ticket booth, bench, new `LobbyLamp`); the station layout now
+  also reuses the map's watertower, a derelict traincar, a stagecoach, barrels, crates and cacti. 0 greyboxes.
 - **Phase 13 — Lobby & UI overhaul** (CLAUDE.md §15, CHECKLIST.md). All six steps built, self-tested solo
   through the Studio MCP (selene/stylua clean, no script errors), one commit per step:
   1. Theme + components (style approved).
@@ -62,7 +65,8 @@ Phase 13
 - Toasts reuse `Fx_Notify(text, kind?)`: no kind = personal hint above the inventory.
 - Settings are client-side for the session (no data saving yet). Camera speed sets
   `UserInputService.MouseDeltaSensitivity`. Mouth view = first-person camera just in front of the worm head.
-- Shop passes all have id 0 ("Coming soon") until the user creates them; perks are not granted yet.
+- Shop is cosmetic only (user decision): Worm skins, hats, train horn sounds, trails. Worm chance is never
+  sold or boosted. All passes have id 0 ("Coming soon") until created; perks are not granted yet.
 - Spectate is local camera only; it's offered to anyone without a role while a round is Playing.
 
 Earlier (still true)
@@ -79,7 +83,8 @@ Earlier (still true)
   spectate, weights over several rounds, kill feed from a real grab); Phase 11 abilities; balloon escape.
 - Studio's play viewport during the MCP checks was portrait (296–540 px wide), narrower than real phones
   (landscape). Layouts were fixed for it, but check the Device emulator at a landscape phone and 1080p.
-- No real sounds/music/particles/animations (`TODO(asset)`; UI and music ids empty). Lobby pieces are greybox.
+- No real sounds/music/particles/animations (`TODO(asset)`; UI and music ids empty).
+- The lobby platform is 3 studs tall, so getting back up from the track side needs a jump (no steps yet).
 - Results match the local player by DisplayName. Each OpenSafe adds a `Request_SafeCode` limiter (tiny leak).
 - Zipline ends hooked high up drop you at the hit point. Rifle recoil can launch you upward.
 - `ContentId rbxassetid://203785492 ... Asset type does not match` warning on Play — not from our code.

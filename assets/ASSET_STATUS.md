@@ -1,6 +1,6 @@
 # ASSET STATUS
 
-**All 94 assets in `Config/Assets.luau` have real models** (50 items, 27 structures, 5 characters, 12 effects),
+**All 102 assets in `Config/Assets.luau` have real models** (50 items, 27 structures, 8 lobby, 5 characters, 12 effects),
 uploaded, imported into `ReplicatedStorage/Assets/*` and checked in play (2026-10-17). Studio models live in
 the place file, not in Git: **save the place after any import.** Ids: `src/shared/Config/AssetIds.luau`.
 
@@ -31,6 +31,23 @@ SafeDigitSign Z 0.6 · CactusTall (3.5, 16, 2.1) · Cattlebug X 3.8 · Tornado (
 BalloonLadder (2, 80, 0.4) (built long so the game's stretch doesn't space the rungs out).
 Zone effects (Sinkhole/Sandtrap/Magma) keep their cylinder greybox sizes in Config; their meshes are flat discs
 (10×0.4×10 etc.) that AbilityKit scales to the zone width.
+
+## Lobby (Phase 13, 2026-10-18)
+Folder `ReplicatedStorage/Assets/Structures`; build scripts `tools/blender/assets/Lobby/<id>.py`; FBX in
+`assets/models/Lobby/`. Every part uses the palette texture; `Detail` parts don't collide; single meshes
+Hull, multi-part PreciseConvexDecomposition. Layout: `Config.Lobby.Pieces`, which also places the map's
+Barrel, Crate, Watertower, Traincar, Stagecoach and cacti around the station.
+
+| Id | Size (studs) | Model asset | Parts → MeshId | Tris | Status |
+|---|---|---|---|---|---|
+| LobbyGround | 170 × 2 × 130 | 127883280147723 | LobbyGround 122022394204587 | 96 | imported |
+| LobbyTrack | 150 × 1 × 8 | 123769058159554 | Ties 113050319227583, Rails 126588210309214 | 516 | imported |
+| LobbyPlatform | 96 × 3 × 16 | 75240283348282 | Base 88642964795908, Deck 100885071806699, Detail 74473247410422 | 516 | imported |
+| LobbyDepot | 40 × 18 × 14 | 113045279668002 | Wall 130460289893418, Roof 82245410907499, Detail 115081921873503 | 450 | imported |
+| LobbyBoard | 22 × 13 × 1 | 100961181328186 | Frame 72285319738380, Screen 86099192794400, Detail 70857325126277 | 112 | imported; text drawn on `Screen`'s Front face |
+| LobbyTicketBooth | 8 × 10 × 6 | 129243702915770 | Wall 88534139727081, Roof 115266202407703, Detail 86369668494112 | 126 | imported |
+| LobbyBench | 7 × 2.5 × 2 | 89643827205478 | LobbyBench 75648135159826 | 132 | imported |
+| LobbyLamp | 1.5 × 10 × 1.5 | 107570775533141 | LobbyLamp 116556373681543 | 112 | imported (new id) |
 
 ## Verified in play (solo)
 - Every item, structure, character and effect spawned in a match is the mesh (0 greyboxes on the map).
