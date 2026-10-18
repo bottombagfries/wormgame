@@ -20,6 +20,7 @@ local Objectives = require(ReplicatedStorage.Shared.Config.Objectives)
 local Structures = require(ReplicatedStorage.Shared.Config.Structures)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Types = require(ReplicatedStorage.Shared.Types)
+local RoleRoll = require(ReplicatedStorage.Shared.RoleRoll)
 local RandomUtil = require(ReplicatedStorage.Shared.Util.Random)
 local Signal = require(ReplicatedStorage.Shared.Util.Signal)
 local ItemService = require(script.Parent.ItemService)
@@ -63,6 +64,8 @@ local roles: { [Player]: Types.Role } = {}
 local loadouts: { [Player]: { string } } = {}
 local trainOutcome: { Player }? = nil -- who escaped, once the Train has left
 local lastResult: string? = nil -- one line about the previous round (lobby board + HUD)
+-- Worm roll weight per UserId for this server session (Config.Lobby.RoleRoll). TODO: save with data saving.
+local wormWeights: { [number]: number } = {}
 
 local function now(): number
 	return Workspace:GetServerTimeNow()
@@ -98,6 +101,31 @@ local function activePlayers(): { Player }
 		end
 	end
 	return list
+end
+
+-- How many Worms a round with `playerCount` players gets: WormCount, but always at least one Pardner.
+local function wormSlots(playerCount: number): number
+	if Debug.Enabled and Debug.NoWorm then
+		return 0
+	end
+	return math.max(0, math.min(GameConfig.WormCount, playerCount - 1))
+end
+
+local function wormWeight(player: Player): number
+	return wormWeights[player.UserId] or LobbyConfig.RoleRoll.BaseWeight
+end
+
+-- Every player's WormChance attribute (0-100, rounded) for the next roll; AFK players get 0.
+local function refreshWormChances()
+	local players = activePlayers()
+	local weights = {}
+	for _, player in players do
+		weights[player] = wormWeight(player)
+	end
+	local chances = RoleRoll.chances(weights, wormSlots(#players))
+	for _, player in Players:GetPlayers() do
+		player:SetAttribute("WormChance", math.round(chances[player] or 0))
+	end
 end
 
 local function buildState(): Types.MatchState
@@ -254,6 +282,7 @@ local function runLobby()
 		local signature = `{#Players:GetPlayers()}:{#activePlayers()}:{settings.difficulty}`
 		if signature ~= lastSignature then
 			lastSignature = signature
+			refreshWormChances()
 			broadcast()
 		end
 		updateBoard()
@@ -261,24 +290,32 @@ local function runLobby()
 	end
 end
 
--- WormCount random worms, but always at least one Pardner. Only active (non-AFK) players take part;
--- everyone else stays in the lobby. The map is loaded here, while the role card is up.
+-- WormCount Worms drawn by weight (Config.Lobby.RoleRoll), but always at least one Pardner. Only active
+-- (non-AFK) players take part; everyone else stays in the lobby. The map is loaded here, while the role
+-- card is up. Weights: Pardners gain WeightPerRound, Worms go back to BaseWeight.
 local function runRoleAssign()
 	MapService.loadMap()
 	TrainService.setActive(true)
-	local players = RandomUtil.shuffle(activePlayers())
-	local wormCount = math.max(0, math.min(GameConfig.WormCount, #players - 1))
-	if Debug.Enabled and Debug.NoWorm then
-		wormCount = 0
+	local players = activePlayers()
+	local weights = {}
+	for _, player in players do
+		weights[player] = wormWeight(player)
 	end
+	local worms = RoleRoll.pick(weights, wormSlots(#players), Random.new())
+
+	local Roll = LobbyConfig.RoleRoll
 	table.clear(loadouts)
-	for index, player in players do
-		local role: Types.Role = if index <= wormCount then "Worm" else "Pardner"
+	for _, player in players do
+		local role: Types.Role = if table.find(worms, player) then "Worm" else "Pardner"
 		setRole(player, role)
 		if role == "Pardner" then
 			PardnerService.add(player)
+			wormWeights[player.UserId] = math.min(Roll.MaxWeight, wormWeight(player) + Roll.WeightPerRound)
+		else
+			wormWeights[player.UserId] = Roll.BaseWeight
 		end
 	end
+	refreshWormChances()
 	enterPhase("RoleAssign", now() + LobbyConfig.RoleRevealSeconds)
 	task.wait(LobbyConfig.RoleRevealSeconds)
 end
@@ -468,6 +505,15 @@ end
 
 -- Request handlers ------------------------------------------------------------------------------
 
+-- AFK players are skipped by the role roll and stay in the lobby (they can still spectate).
+local function onSetAfk(player: Player, state: any)
+	if typeof(state) == "boolean" then
+		player:SetAttribute("Afk", state)
+		refreshWormChances()
+		broadcast()
+	end
+end
+
 local function onSetDifficulty(player: Player, name: any)
 	local inLobby = phase == "Lobby" or phase == "Intermission"
 	if not inLobby or player ~= host or typeof(name) ~= "string" or not Difficulty[name] then
@@ -530,6 +576,7 @@ function MatchService.init()
 end
 
 function MatchService.start()
+	Net.onRequest("Request_SetAfk", onSetAfk)
 	Net.onRequest("Request_SetDifficulty", onSetDifficulty)
 	Net.onRequest("Request_SelectAbilities", onSelectAbilities)
 

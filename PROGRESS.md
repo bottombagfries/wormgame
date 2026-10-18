@@ -45,6 +45,12 @@ file at the end of every phase (CLAUDE.md §17).
     (SurfaceGui: countdown / waiting / in progress + last result). The map template and Train sit in
     ServerStorage between rounds (`MapService.loadMap/unloadMap`, `TrainService.setActive`); runtime is
     destroyed. Ready button removed (MM2-style countdown only). Only round players are teleported/returned.
+  - Step 3 done: `shared/RoleRoll.luau` (weighted pick without replacement + chance %). MatchService keeps a
+    per-UserId weight (session only): Pardners +1 per round (max 10), the Worm resets to 1; AFK players
+    (`Afk` attribute via `Request_SetAfk`) are skipped. `WormChance` attribute (0–100) on every player.
+    `UI/RoleCard.luau` (role-colored band, title slam, description fade, Reveal sound; text in
+    `Config.Lobby.RoleCards`). `UI/LoadoutScreen.luau` rebuilt: timer bar + 2-column ability cards with
+    descriptions (new `description` field in Config/Abilities); Pardners get a "Worm is choosing" strip.
 - Deferred by the spec ("Later"): wormlings, cosmetics, mobile controls, data saving.
 
 ## What each file does

@@ -83,6 +83,7 @@ export type DifficultyDef = {
 export type AbilityDef = {
 	id: string,
 	displayName: string,
+	description: string?, -- one line for the loadout picker
 	kind: "Default" | "Choosable",
 	action: string?, -- Config/Keybinds action that fires it (default abilities)
 	cooldown: number,

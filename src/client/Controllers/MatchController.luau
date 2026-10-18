@@ -15,10 +15,7 @@ local Signal = require(ReplicatedStorage.Shared.Util.Signal)
 local EndScreen = require(script.Parent.UI.EndScreen)
 local LoadoutScreen = require(script.Parent.UI.LoadoutScreen)
 local LobbyScreen = require(script.Parent.UI.LobbyScreen)
-
-local PARDNER_COLOR = Color3.fromRGB(120, 220, 120)
-local WORM_COLOR = Color3.fromRGB(230, 90, 80)
-local NEUTRAL_COLOR = Color3.new(1, 1, 1)
+local RoleCard = require(script.Parent.UI.RoleCard)
 
 local MatchController = {}
 
@@ -40,6 +37,7 @@ local state: Types.MatchState = {
 local lobby: LobbyScreen.Screen
 local loadout: LoadoutScreen.Screen
 local endScreen: EndScreen.Screen
+local roleCard: RoleCard.Screen
 
 local function secondsLeft(): number
 	local endsAt = state.endsAt
@@ -59,28 +57,23 @@ local function updateLobby()
 	lobby.setDifficulty(state.difficulty, state.hostUserId == player.UserId)
 end
 
-local function updateLoadout()
+-- RoleAssign: the full-screen role card. WormLoadout: the Worm picks; everyone else sees a waiting strip.
+local function updateRoleScreens()
 	local role = MatchController.getRole()
-	local picking = state.phase == "WormLoadout"
-
-	local headline, color = "SPECTATING", NEUTRAL_COLOR
-	if role == "Worm" then
-		headline, color = "YOU ARE THE WORM", WORM_COLOR
-	elseif role == "Pardner" then
-		headline, color = "YOU ARE A PARDNER", PARDNER_COLOR
+	local phase = state.phase
+	if phase == "RoleAssign" and role ~= "None" then
+		roleCard.show(role)
+	else
+		roleCard.hide()
 	end
 
-	local subtitle = ""
-	if picking and role == "Worm" then
-		subtitle = `Pick {GameConfig.WormAbilityPicks} abilities   ({secondsLeft()}s)`
-	elseif picking then
-		subtitle = `The Worm is choosing abilities...   ({secondsLeft()}s)`
-	elseif role == "Pardner" then
-		subtitle = "Fuel the Train and escape"
-	elseif role == "Worm" then
-		subtitle = "Don't let them leave"
+	if phase == "WormLoadout" and role == "Worm" then
+		loadout.showPicker(secondsLeft(), GameConfig.WormLoadoutSeconds)
+	elseif phase == "WormLoadout" and role ~= "None" then
+		loadout.showWaiting(`The Worm is choosing abilities...  {secondsLeft()}s`)
+	else
+		loadout.hide()
 	end
-	loadout.show(headline, color, subtitle, picking and role == "Worm")
 end
 
 local function update()
@@ -91,11 +84,7 @@ local function update()
 	if inLobby then
 		updateLobby()
 	end
-	if (phase == "RoleAssign" or phase == "WormLoadout") and MatchController.getRole() ~= "None" then
-		updateLoadout()
-	else
-		loadout.hide()
-	end
+	updateRoleScreens()
 end
 
 -- The end screen's line about the local player.
@@ -166,6 +155,7 @@ function MatchController.init()
 		Net.event("Request_SelectAbilities"):FireServer(ids)
 	end)
 	endScreen = EndScreen.create(playerGui)
+	roleCard = RoleCard.create(playerGui)
 end
 
 function MatchController.start()

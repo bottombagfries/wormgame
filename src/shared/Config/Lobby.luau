@@ -20,6 +20,19 @@ return {
 		MaxWeight = 10,
 	},
 
+	-- The full-screen role card shown during RoleAssign (colors come from Config/Theme).
+	RoleCards = {
+		Worm = {
+			title = "YOU ARE THE WORM",
+			description = "Swim under the sand. Feel them run. Eat every last Pardner before the Train leaves.",
+		},
+		Pardner = {
+			title = "YOU ARE A PARDNER",
+			description = "Scavenge, finish the objectives and fuel the Train. Keep still on the sand - it can feel you.",
+		},
+		WaitSeconds = 0.6, -- the description fades in this long after the title lands
+	},
+
 	-- Where the station sits. The map is a 1024-stud square centered on the origin, so this is well clear.
 	Origin = v3(0, 0, 3000),
 
