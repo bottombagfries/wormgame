@@ -380,7 +380,255 @@ def export_fbx(obj, folder, scale=1.0):
         use_mesh_modifiers=True,
         add_leaf_bones=False,
         bake_anim=False,
-        path_mode="COPY",
+        path_mode="STRIP",
         embed_textures=False,
     )
     return path
+
+
+# ---- Multi-mesh assets (structures, characters) ---------------------------------------------------
+
+
+def _join(parts, name):
+    bpy.ops.object.select_all(action="DESELECT")
+    for p in parts:
+        p.select_set(True)
+    _active(parts[0])
+    if len(parts) > 1:
+        bpy.ops.object.join()
+    obj = bpy.context.active_object
+    obj.name = name
+    obj.data.name = name
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    return obj
+
+
+def _palettize(obj, untextured=False):
+    me = obj.data
+    names = [s.material.name[4:] if s.material else "Coal" for s in obj.material_slots]
+    uv = me.uv_layers.get("UVMap") or me.uv_layers.new(name="UVMap")
+    for poly in me.polygons:
+        u, v = cell_center_uv(palette_index(names[poly.material_index] if names else "Coal"))
+        for li in poly.loop_indices:
+            uv.data[li].uv = (u, v)
+    me.materials.clear()
+    me.materials.append(palette_material())
+    for poly in me.polygons:
+        poly.material_index = 0
+        poly.use_smooth = False
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.001)
+    bmesh.ops.dissolve_degenerate(bm, edges=bm.edges, dist=0.0001)
+    loose = [v for v in bm.verts if not v.link_edges]
+    bmesh.ops.delete(bm, geom=loose, context="VERTS")
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    bm.to_mesh(me)
+    bm.free()
+    obj["untextured"] = untextured
+
+
+def finalize_group(groups, asset_id, size, untextured=()):
+    """Joins each named group of parts into its own mesh object (name = group name, e.g. "Wall",
+    "Roof", "Floor", "Detail"), gives them all one shared bottom-center origin at the world origin, snaps
+    the whole set to `size` (studs, Roblox X,Y,Z) like finalize(), and returns the list of objects.
+    Groups named in `untextured` are colored by game code in Roblox (house body/trim)."""
+    objs = []
+    for name, parts in groups.items():
+        if not parts:
+            continue
+        obj = _join(parts, name)
+        _palettize(obj, name in untextured)
+        objs.append(obj)
+    allv = [v.co for o in objs for v in o.data.vertices]
+    lo = Vector(tuple(min(c[i] for c in allv) for i in range(3)))
+    hi = Vector(tuple(max(c[i] for c in allv) for i in range(3)))
+    offset = Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, lo.z))
+    dims = hi - lo
+    want = Vector((size[0], size[2], size[1]))
+    factors = [
+        want[i] / dims[i] if dims[i] > 0 and abs(dims[i] - want[i]) / want[i] <= FIT_TOLERANCE else 1 for i in range(3)
+    ]
+    tris = 0
+    per = {}
+    for o in objs:
+        for v in o.data.vertices:
+            c = v.co - offset
+            v.co = Vector((c.x * factors[0], c.y * factors[1], c.z * factors[2]))
+        o.data.update()
+        o.location = (0, 0, 0)
+        t = sum(len(p.vertices) - 2 for p in o.data.polygons)
+        per[o.name] = t
+        tris += t
+    allv = [v.co for o in objs for v in o.data.vertices]
+    dims = Vector(tuple(max(c[i] for c in allv) - min(c[i] for c in allv) for i in range(3)))
+    errors = [abs(dims[i] - want[i]) / max(want[i], 0.01) for i in range(3)]
+    print(
+        {
+            "id": asset_id,
+            "tris": tris,
+            "per_mesh": per,
+            "size_studs": (round(dims.x, 3), round(dims.z, 3), round(dims.y, 3)),
+            "target": tuple(size),
+            "size_ok": max(errors) <= 0.02,
+        }
+    )
+    bpy.context.scene["wt_group_id"] = asset_id
+    return objs
+
+
+def export_group(objs, folder, asset_id, scale=1.0):
+    path = os.path.join(PROJECT, "assets", "models", folder, asset_id + ".fbx")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in objs:
+        o.select_set(True)
+    _active(objs[0])
+    bpy.ops.export_scene.fbx(
+        filepath=path,
+        use_selection=True,
+        object_types={"MESH"},
+        global_scale=scale,
+        apply_unit_scale=True,
+        apply_scale_options="FBX_SCALE_ALL",
+        axis_forward="-Z",
+        axis_up="Y",
+        mesh_smooth_type="FACE",
+        use_mesh_modifiers=True,
+        add_leaf_bones=False,
+        bake_anim=False,
+        path_mode="STRIP",
+        embed_textures=False,
+    )
+    return path
+
+
+def gable(width, depth, height, location=(0, 0, 0), overhang=0.0, thickness=0.4, color=None, name="roof"):
+    """A pitched roof: two slabs meeting at a ridge along Y. `width` is the wall span (X), `depth` the
+    length (Y), `height` the ridge rise above `location` (the eave line on the walls)."""
+    import math
+
+    slope = math.atan2(height, width / 2)
+    run = width / 2 + overhang
+    rise = run * math.tan(slope)
+    length = math.hypot(run, rise)
+    parts = []
+    for side in (-1, 1):
+        slab = box(
+            (length, depth + overhang * 2, thickness),
+            location=(location[0] + side * run / 2, location[1], location[2] + height - rise / 2 + thickness / 2),
+            rotation=(0, side * slope, 0),
+            color=color,
+            name=name,
+        )
+        parts.append(slab)
+    return parts
+
+
+def prism(width, depth, height, location=(0, 0, 0), color=None, name="gable"):
+    """A solid triangular prism (gable end / attic fill): base `width` along X, ridge along Y."""
+    bm = bmesh.new()
+    hw, hd = width / 2, depth / 2
+    v = [
+        bm.verts.new((-hw, -hd, 0)), bm.verts.new((hw, -hd, 0)), bm.verts.new((0, -hd, height)),
+        bm.verts.new((-hw, hd, 0)), bm.verts.new((hw, hd, 0)), bm.verts.new((0, hd, height)),
+    ]
+    bm.faces.new((v[0], v[2], v[1]))
+    bm.faces.new((v[3], v[4], v[5]))
+    bm.faces.new((v[0], v[1], v[4], v[3]))
+    bm.faces.new((v[1], v[2], v[5], v[4]))
+    bm.faces.new((v[2], v[0], v[3], v[5]))
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    o = bpy.data.objects.new(name, me)
+    bpy.context.collection.objects.link(o)
+    o.location = location
+    _active(o)
+    bpy.ops.object.transform_apply(location=True)
+    if color:
+        paint(o, color)
+    return o
+
+
+def build_any(folder, asset_id):
+    """Runs a build script; returns a list of objects (single-mesh scripts return one object)."""
+    result = build_asset(folder, asset_id)
+    return result if isinstance(result, list) else [result]
+
+
+def export_any(objs, folder, asset_id):
+    if len(objs) == 1 and objs[0].name == asset_id:
+        return export_fbx(objs[0], folder)
+    return export_group(objs, folder, asset_id)
+
+
+def house(asset_id, size, roof_rise, stories=1, chimney=True, seed=1):
+    """A walk-in house (§7) as named meshes: Wall + Roof (untextured — game code paints body/trim colors),
+    Trim (corner boards, door + window frames; untextured trim color), Floor (+ door step), Detail
+    (window glass, door, chimney). Door on the front (Blender -Y = Roblox -Z). `size` is Roblox (X, Y, Z).
+    The roof overhangs the walls by 1 stud, so the walls stand 1 stud inside the footprint."""
+    W, H, D = size[0], size[1], size[2]
+    over = 1.0
+    t = 1.0
+    w, d = W - 2 * over, D - 2 * over  # wall footprint
+    wall_h = H - roof_rise
+    door_w, door_h = 6.0, 8.0
+    walls, roof, trim, floor, detail = [], [], [], [], []
+
+    floor.append(box((w, d, t), location=(0, 0, t / 2), color="WoodMid", name="Floor"))
+    floor.append(box((door_w + 2, 1.0, 0.5), location=(0, -d / 2 - 0.5, 0.25), color="WoodDark", name="Floor"))
+
+    zc = t + (wall_h - t) / 2
+    hh = wall_h - t
+    walls.append(box((w, t, hh), location=(0, d / 2 - t / 2, zc), name="Wall"))
+    walls.append(box((t, d - 2 * t, hh), location=(-w / 2 + t / 2, 0, zc), name="Wall"))
+    walls.append(box((t, d - 2 * t, hh), location=(w / 2 - t / 2, 0, zc), name="Wall"))
+    side = (w - door_w) / 2
+    fy = -d / 2 + t / 2
+    walls.append(box((side, t, hh), location=(-w / 2 + side / 2, fy, zc), name="Wall"))
+    walls.append(box((side, t, hh), location=(w / 2 - side / 2, fy, zc), name="Wall"))
+    lintel = hh - door_h
+    walls.append(box((door_w, t, lintel), location=(0, fy, t + door_h + lintel / 2), name="Wall"))
+    for y in (fy, d / 2 - t / 2):
+        walls.append(prism(w, t, roof_rise - 0.3, location=(0, y, wall_h), name="Wall"))
+
+    roof.extend(gable(w, d, roof_rise, location=(0, 0, wall_h), overhang=over, thickness=0.5, name="Roof"))
+
+    for x in (-w / 2, w / 2):
+        for y in (-d / 2, d / 2):
+            trim.append(box((0.5, 0.5, hh), location=(x, y, zc), name="Trim"))
+    trim.append(box((door_w + 1, 0.3, 0.6), location=(0, -d / 2 - 0.1, t + door_h + 0.3), name="Trim"))
+    for x in (-door_w / 2 - 0.25, door_w / 2 + 0.25):
+        trim.append(box((0.5, 0.3, door_h), location=(x, -d / 2 - 0.1, t + door_h / 2), name="Trim"))
+
+    def window(x, y, z, facing_x=False):
+        if facing_x:
+            trim.append(box((0.3, 3.4, 3.4), location=(x, y, z), name="Trim"))
+            detail.append(box((0.32, 2.6, 2.6), location=(x, y, z), color="Glass", name="Detail"))
+            detail.append(box((0.36, 0.2, 2.6), location=(x, y, z), color="WoodDark", name="Detail"))
+        else:
+            trim.append(box((3.4, 0.3, 3.4), location=(x, y, z), name="Trim"))
+            detail.append(box((2.6, 0.32, 2.6), location=(x, y, z), color="Glass", name="Detail"))
+            detail.append(box((0.2, 0.36, 2.6), location=(x, y, z), color="WoodDark", name="Detail"))
+
+    levels = [t + 5.0 + k * (hh / stories) for k in range(stories)]
+    for z in levels:
+        for x in (-w / 4 - 1, w / 4 + 1):
+            if stories > 1 or abs(x) > door_w / 2 + 2:
+                window(x, -d / 2 - 0.05, z)
+            window(x, d / 2 + 0.05, z)
+        for y in (-d / 4, d / 4):
+            window(-w / 2 - 0.05, y, z, True)
+            window(w / 2 + 0.05, y, z, True)
+    if stories > 1:
+        window(0, -d / 2 - 0.05, levels[-1])
+
+    if chimney:
+        cx = w / 4
+        detail.append(box((2, 2, roof_rise), location=(cx, d / 4, wall_h + roof_rise / 2), color="Rust", name="Detail"))
+        detail.append(box((2.4, 2.4, 0.5), location=(cx, d / 4, wall_h + roof_rise - 0.25), color="MetalDark", name="Detail"))
+    return finalize_group(
+        {"Floor": floor, "Wall": walls, "Roof": roof, "Trim": trim, "Detail": detail},
+        asset_id, size, untextured=("Wall", "Roof", "Trim"),
+    )

@@ -26,6 +26,8 @@ every phase (CLAUDE.md §17).
     out of the bugs' reach → they now anchor where they land. (3) Cattlebugs could wander off the map edge
     into the void → they turn back when there's no ground ahead.
   - Not testable solo: worm abilities (Phase 11), balloon escape, anything 2P.
+- **Art pass (2026-10-17):** all 94 assets have real low-poly models (Blender scripts → Open Cloud → Studio),
+  verified in a solo playtest. Details, rules and Config size changes: `assets/ASSET_STATUS.md`.
 - Deferred by the spec ("Later"): wormlings, cosmetics, mobile controls, data saving.
 
 ## What each file does

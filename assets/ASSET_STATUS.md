@@ -1,42 +1,51 @@
 # ASSET STATUS
 
-Statuses: `todo` · `script` (Blender build script exists) · `blender-ok` (built, size checked) ·
-`imported` (uploaded + in Studio, verified in play). Studio models live in the place file, not in Git:
-**save the place after each import.** Mesh ids are recorded in `src/shared/Config/AssetIds.luau`.
+**All 94 assets in `Config/Assets.luau` have real models** (50 items, 27 structures, 5 characters, 12 effects),
+uploaded, imported into `ReplicatedStorage/Assets/*` and checked in play (2026-10-17). Studio models live in
+the place file, not in Git: **save the place after any import.** Ids: `src/shared/Config/AssetIds.luau`.
 
-## Pipeline (settled 2026-10-17)
-1. Blender: `exec(open(r"<repo>\tools\blender\wt_style.py").read())`, then `build_asset("Items", id)` and
-   `export_fbx(obj, "Items")`. Build scripts: `tools/blender/assets/<Folder>/<id>.py`.
-2. Upload: `powershell -File tools/upload_asset.ps1 -File assets/models/<Folder>/<id>.fbx -Type Model -Name <id>`
-   (prints the Model asset id only; reads ROBLOX_API_KEY / ROBLOX_CREATOR_ID from the environment).
-3. Studio (edit, MCP): `game:GetObjects` the Model asset → read its MeshPart's MeshId →
-   `AssetService:CreateMeshPartAsync` (Hull collision) → TextureID = palette image → Model with PrimaryPart in
-   `ReplicatedStorage/Assets/<Folder>/<id>`.
-- **Export scale = 1.0**: 1 Blender unit came in as exactly 1 stud (SmallCoal 1×1×1 → MeshSize 1×1×1).
-- Palette texture: Decal 86148081784505 → image 81576212373708 (every MeshPart's TextureID).
-- The Studio viewport renders blank to the MCP screen capture here, so Studio checks are numeric (part class,
-  size, greybox count in play) plus the Blender renders in `assets/renders/`.
+Renders: `assets/renders/items_all.png`, `items_batch1.png`, `structures_all.png`, `characters_effects.png`.
 
-## Items — batch 1 ✅ (render: `assets/renders/items_batch1.png`)
-| id | status | tris | notes |
-|---|---|---|---|
-| SmallCoal | imported | 80 | faceted lump; 31/31 in a match are the mesh; pickup, hold, throw, settles |
-| BigCoal | imported | 100 | two fused lumps; thrown fine; furnace +7 fuel (14/100 solo) ✓ |
-| Barrel | imported | 404 | staves + 3 hoops; size-X hold + throw ✓ (lands on its side, rolls a bit) |
-| Dynamite | imported | 156 | 3 sticks + band + fuse; light (R) → throw → explodes after the fuse ✓ |
-| Lantern | imported | 250 | glowing chimney; Studio model adds a warm PointLight (range 10) in place of the greybox's Neon |
+## Pipeline
+1. Blender: `exec(open(r"<repo>\tools\blender\wt_style.py").read())`, then `objs = build_any(folder, id)` and
+   `export_any(objs, folder, id)`. Build scripts: `tools/blender/assets/<Folder>/<id>.py`. One-mesh assets use
+   `finalize`; structures use `finalize_group` (several named meshes, one shared origin) or `house(...)`.
+2. Upload: `powershell -File tools/upload_asset.ps1 -File assets/models/<Folder>/<id>.fbx -Type Model -Name <id>`.
+3. Studio (edit, MCP): `game:GetObjects` the Model asset → for each MeshPart, `AssetService:CreateMeshPartAsync`
+   with its MeshId, copy CFrame + Size, strip `.001` from names → Model in `ReplicatedStorage/Assets/<Folder>/<id>`.
+   Rules used:
+   - Texture = palette image 81576212373708, except untextured parts (game code recolors them):
+     `Wall`/`Roof`/`Trim` on houses, `Kindling` (SignalFire), `Rails` (BrokenTrack).
+   - Collision: single-mesh assets Hull; multi-part structures PreciseConvexDecomposition (doorways stay open);
+     `Detail`/`Trim` parts CanCollide off; TrainFurnace CanCollide off (thrown items go in); Tornado
+     CanCollide off + Transparency 0.35.
+   - MagmaPatch and RifleTracer: Neon + color, no texture. Ghost: ForceField material.
+   - Houses get a 5×5 grid of `LootPoint` attachments on the floor; the Church gets 7 (pulpit at the back,
+     pews in rows).
+- Export scale 1.0 (1 Blender unit = 1 stud). Blender −Y = Roblox −Z (front; doors face it).
 
-## Items — next batches (~5 each, in this order)
-- Batch 2 (fuel, small): MassiveCoal, Bucket, CoffeePot, Skillet, RustyTinCan
-- Batch 3 (fuel, furniture): Stool, Chair, Table, Bench, Bed
-- Batch 4 (fuel, misc): Gramophone, DutchOven, Painting, GrainSack, Pew
-- Batch 5: Pulpit, CactusFruit, Horseshoe, Crate, Chest
-- Batch 6 (objective): TrainKey, Scrap, Tumbleweed, SassparillaCrate, PuzzleMap
-- Batch 7: TrainManual, Backpack, HeartJar, Ladder, CursedTrinket
-- Batches 8–10 (kits): BullwormRifle, CactusSeedPouch, Canteen, CoffeeTin, CymbalMonkey, DandylionBundle,
-  SpiritBoard, MysteriousConcoction, DeadBook, PogoStick, QuickEscapeKnife, Shovel, Slingshot, SnakeOil,
-  ZiplineCrossbow
+## Config size changes (made to match the models; CLAUDE.md §3)
+CoffeePot Z 0.7 · Skillet Z 1.1 · Painting Z 0.35 · Horseshoe Z 0.85 · TrainKey Y 0.5 · CursedTrinket Z 0.3 ·
+BullwormRifle X 0.35 · CymbalMonkey Z 1 · PogoStick (1.2, 4, 0.4) · QuickEscapeKnife X 0.22 · Slingshot Z 0.3 ·
+SafeDigitSign Z 0.6 · CactusTall (3.5, 16, 2.1) · Cattlebug X 3.8 · Tornado (40, 60, 40) (Sandstorm's real size) ·
+BalloonLadder (2, 80, 0.4) (built long so the game's stretch doesn't space the rungs out).
+Zone effects (Sinkhole/Sandtrap/Magma) keep their cylinder greybox sizes in Config; their meshes are flat discs
+(10×0.4×10 etc.) that AbilityKit scales to the zone width.
 
-## Structures, Characters, Effects
-All `todo`. See `src/shared/Config/Assets.luau` for ids and sizes. Structures need LootPoint empties
-(→ Attachments) and the 10k-triangles-per-mesh cap.
+## Verified in play (solo)
+- Every item, structure, character and effect spawned in a match is the mesh (0 greyboxes on the map).
+- Items: pickup / hold / bag / throw on SmallCoal, BigCoal, Barrel, Lantern, Crate, Table, Bed, Tumbleweed,
+  GrainSack, Pew, Shovel (kit); furnace +7 from BigCoal; dynamite lights, explodes, leaves the Crater mesh.
+- Structures: walked through the door of every house type and the Church; side walls block; 282/288 house
+  loot lands inside the walls.
+- Effects: cactus seeds → CactusTall mesh, rifle → tracer, dandylion, crater. Ghost spawns with the mesh.
+- No errors in Output.
+
+## Not yet checked by a person (needs eyes or 2 players)
+- How everything looks in Studio (the MCP screenshot of the Studio viewport comes back blank here).
+- Worm head/segments and abilities' zones (Sinkhole, Sandtrap, Magma, Tornado, Tar spires, Bile bomb) in a 2P
+  match; Balloon + ladder (needs 2 Pardners); stagecoach crates, signal fire lit color, repaired track color.
+
+## Item triangle counts (all well under budget)
+Items 80–660 tris each; structures 92–1596 total (largest single mesh: Train Frame 804); characters 154–548;
+effects 20–384. Full per-asset numbers are printed by the build scripts.
