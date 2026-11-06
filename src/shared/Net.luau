@@ -34,11 +34,13 @@ local REMOTES: { [string]: RemoteKind } = {
 	Request_SetDifficulty = "Event", -- (name: string) host only, in the lobby
 	Request_SetAfk = "Event", -- (afk: boolean) skip the role roll and stay in the lobby
 	Request_SetWormSkin = "Event", -- (skinId: string) cosmetic; checked against owned passes
+	Request_SaveSettings = "Event", -- (values: { [string]: any }) Settings window; validated and saved
 	Request_SelectAbilities = "Event", -- (abilityIds: { string }) worm only, during WormLoadout
 
 	-- Server -> client state
 	State_Pardner = "Event", -- (stats)
 	State_Inventory = "Event", -- (Types.InventoryState)
+	State_Profile = "Event", -- (Types.ProfileView) saved settings + lifetime stats
 	State_Objectives = "Event", -- ({ Types.ObjectiveProgress })
 	State_Match = "Event", -- (Types.MatchState)
 	State_Safe = "Event", -- (Types.SafeState) OpenSafe objective: code signs, recorded digits, safe position

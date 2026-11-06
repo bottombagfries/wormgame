@@ -1,6 +1,5 @@
 --!strict
--- Phase 13 player settings (the lobby's Settings window). Kept on the client for this session.
--- TODO(data saving): persist per player once data saving exists.
+-- Phase 13 player settings (the lobby's Settings window). Saved per player (DataService).
 
 return {
 	Defaults = {

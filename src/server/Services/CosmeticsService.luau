@@ -3,7 +3,8 @@
 -- Cosmetic only - nothing here touches the role roll or gameplay.
 --
 -- Replication: player attributes OwnedPasses (comma-separated pass keys) and WormSkin (skin id).
--- Requests: Request_SetWormSkin(skinId) - checked against ownership here.
+-- Requests: Request_SetWormSkin(skinId) - checked against ownership here. The choice is saved (DataService)
+-- and put back on the next visit once the pass check is done, if the player may still use that skin.
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
@@ -15,12 +16,14 @@ local Shop = require(ReplicatedStorage.Shared.Config.Shop)
 local WormSkins = require(ReplicatedStorage.Shared.Config.WormSkins)
 local Net = require(ReplicatedStorage.Shared.Net)
 local WormSkin = require(ReplicatedStorage.Shared.WormSkin)
+local DataService = require(script.Parent.DataService)
 
 local Debug = GameConfig.Debug
 
 local CosmeticsService = {}
 
 local owned: { [Player]: { [string]: boolean } } = {}
+local restoreSkin: (player: Player) -> () -- defined below; refresh() uses it
 
 -- In Studio with Debug.UnlockAllCosmetics every pass counts as owned, so cosmetics can be tested before the
 -- passes exist.
@@ -52,6 +55,7 @@ local function refresh(player: Player)
 	if player.Parent then
 		owned[player] = passes
 		publish(player)
+		restoreSkin(player)
 	end
 end
 
@@ -80,6 +84,16 @@ end
 local function onSetWormSkin(player: Player, skinId: any)
 	if typeof(skinId) == "string" and CosmeticsService.canUseSkin(player, skinId) then
 		player:SetAttribute("WormSkin", skinId)
+		DataService.setWormSkin(player, skinId)
+	end
+end
+
+-- Puts the saved skin back once both the saved data and the pass check are in (either can finish first).
+function restoreSkin(player: Player)
+	local profile = DataService.get(player)
+	local saved = profile and profile.wormSkin
+	if saved and owned[player] and CosmeticsService.canUseSkin(player, saved) then
+		player:SetAttribute("WormSkin", saved)
 	end
 end
 
@@ -96,6 +110,9 @@ function CosmeticsService.start()
 	end
 	Players.PlayerRemoving:Connect(function(player)
 		owned[player] = nil
+	end)
+	DataService.loaded:connect(function(player: Player)
+		restoreSkin(player)
 	end)
 
 	-- Right after a purchase the ownership check can still say no for a while, so trust the receipt.

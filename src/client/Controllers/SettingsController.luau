@@ -1,7 +1,8 @@
 --!strict
--- Phase 13 player settings: music / SFX volume, camera sensitivity, the Worm's mouth view. Values live here
--- for the session (Config/Settings defaults); setting one applies it right away. Also plays the lobby / match
--- music through the Music sound group.
+-- Phase 13 player settings: music / SFX volume, camera sensitivity, the Worm's mouth view. Setting one
+-- applies it right away; values are saved per player (DataService, via Request_SaveSettings) and the saved
+-- ones come back on join (State_Profile), which also carries the lifetime stats shown in the Settings window.
+-- Also plays the lobby / match music through the Music sound group.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -9,7 +10,10 @@ local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
+local Progression = require(ReplicatedStorage.Shared.Config.Progression)
 local SettingsConfig = require(ReplicatedStorage.Shared.Config.Settings)
+local Net = require(ReplicatedStorage.Shared.Net)
+local Types = require(ReplicatedStorage.Shared.Types)
 local Signal = require(ReplicatedStorage.Shared.Util.Signal)
 local MatchController = require(script.Parent.MatchController)
 local UiSound = require(script.Parent.UI.Components.UiSound)
@@ -29,6 +33,8 @@ SettingsController.changed = changed
 local values: Values = table.clone(SettingsConfig.Defaults)
 local groups: { [string]: SoundGroup } = {}
 local tracks: { [string]: Sound } = {}
+local profile: Types.ProfileView? = nil
+local saveToken = 0
 
 -- "Music" and "Sfx" sound groups in SoundService (SoundController and UiSound use Sfx).
 function SettingsController.getGroup(name: "Music" | "Sfx"): SoundGroup
@@ -63,6 +69,17 @@ function SettingsController.get(): Values
 	return values
 end
 
+-- Sends every value to the server (DataService) once changes have stopped for a moment.
+local function scheduleSave()
+	saveToken += 1
+	local token = saveToken
+	task.delay(Progression.SettingsSaveDelay, function()
+		if token == saveToken then
+			Net.event("Request_SaveSettings"):FireServer(values)
+		end
+	end)
+end
+
 function SettingsController.set(key: string, value: any)
 	local current = (values :: any)[key]
 	if current == nil or typeof(current) ~= typeof(value) or current == value then
@@ -71,6 +88,40 @@ function SettingsController.set(key: string, value: any)
 	(values :: any)[key] = value
 	apply(key)
 	changed:fire(key)
+	scheduleSave()
+end
+
+-- One line for the Settings window: lifetime stats, or why nothing is being saved.
+function SettingsController.getRecordText(): string
+	if not profile then
+		return "Loading your record..."
+	end
+	if not profile.saving then
+		return "Settings and stats aren't being saved this session."
+	end
+	local stats = profile.stats
+	local function n(name: string): number
+		return stats[name] or 0
+	end
+	return `Rounds {n("Played")}  ·  Escaped {n("Escapes")}  ·  Worm wins {n("WormWins")} of {n("WormRounds")}`
+end
+
+-- The first State_Profile brings the saved settings; later ones only update the record line (applying them
+-- again could undo a slider the player is still moving).
+local function onProfile(view: Types.ProfileView)
+	local first = profile == nil
+	profile = view
+	if first then
+		for key, value in view.settings do
+			local current = (values :: any)[key]
+			if current ~= nil and typeof(current) == typeof(value) and current ~= value then
+				(values :: any)[key] = value
+				apply(key)
+				changed:fire(key)
+			end
+		end
+	end
+	changed:fire("Record")
 end
 
 -- Lobby music while at the station, match music during a round (both silent until ids are set).
@@ -102,6 +153,8 @@ function SettingsController.init()
 end
 
 function SettingsController.start()
+	Net.event("State_Profile").OnClientEvent:Connect(onProfile)
+
 	if next(tracks) == nil then
 		return
 	end

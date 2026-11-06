@@ -32,6 +32,7 @@ local Lobby = require(script.Parent.Parent.Map.Lobby)
 local SoundCue = require(script.Parent.Parent.Util.SoundCue)
 local ObjectiveService = require(script.Parent.ObjectiveService)
 local PardnerService = require(script.Parent.PardnerService)
+local DataService = require(script.Parent.DataService)
 local ReviveService = require(script.Parent.ReviveService)
 local StructureService = require(script.Parent.StructureService)
 local TrainService = require(script.Parent.TrainService)
@@ -366,6 +367,27 @@ local function finishResult(
 ): Types.MatchResult
 	local deaths = ReviveService.getRoundStats()
 	local done, total = ObjectiveService.getSummary()
+
+	-- Lifetime stats for everyone who had a role this round (saved by DataService).
+	for player, role in roles do
+		if player.Parent == nil then
+			continue
+		end
+		local lifetime: { [string]: number } = { Played = 1 }
+		if role == "Worm" then
+			lifetime.WormRounds = 1
+			lifetime.WormWins = if winner == "Worm" then 1 else 0
+		else
+			lifetime.PardnerRounds = 1
+			if table.find(escaped, player) then
+				lifetime.Escapes = 1
+			else
+				lifetime.PardnerDeaths = 1
+			end
+		end
+		DataService.addStats(player, lifetime)
+	end
+
 	return {
 		winner = winner,
 		escaped = names(escaped),

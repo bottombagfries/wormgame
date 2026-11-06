@@ -13,6 +13,7 @@ type Service = {
 }
 
 local SERVICE_ORDER = {
+	"DataService",
 	"MapService",
 	"StructureService",
 	"ItemService",

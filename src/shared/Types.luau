@@ -255,4 +255,19 @@ export type Role = "Pardner" | "Worm"
 -- How a Fx_Notify toast is styled (Config/Theme colors; Config.Toasts timings).
 export type ToastKind = "Info" | "Kill" | "Objective" | "Sundown" | "Revive" | "Event"
 
+-- Saved per player by DataService.
+export type Profile = {
+	version: number,
+	settings: { [string]: any }, -- Settings-window values (Config/Settings.Defaults keys)
+	wormSkin: string?, -- last chosen skin (used again only while the player may still use it)
+	stats: { [string]: number }, -- Played, PardnerRounds, WormRounds, Escapes, PardnerDeaths, WormWins
+}
+
+-- What the owning client is sent (State_Profile).
+export type ProfileView = {
+	settings: { [string]: any },
+	stats: { [string]: number },
+	saving: boolean, -- false when data could not load and nothing will be saved (e.g. Studio without API access)
+}
+
 return {}

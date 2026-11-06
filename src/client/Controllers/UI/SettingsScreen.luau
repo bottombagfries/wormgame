@@ -1,11 +1,12 @@
 --!strict
 -- Phase 13 Settings window: music and SFX volume, camera sensitivity, and the Worm's first-person mouth
--- view. Changes go straight to SettingsController (kept for the session).
+-- view. Changes go straight to SettingsController, which saves them; the bottom line shows lifetime stats.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SettingsConfig = require(ReplicatedStorage.Shared.Config.Settings)
 local Theme = require(ReplicatedStorage.Shared.Config.Theme)
+local Signal = require(ReplicatedStorage.Shared.Util.Signal)
 local Button = require(script.Parent.Components.Button)
 local Label = require(script.Parent.Components.Label)
 local Modal = require(script.Parent.Components.Modal)
@@ -19,7 +20,15 @@ local function percent(value: number): string
 	return `{math.round(value * 100)}%`
 end
 
-function SettingsScreen.create(parent: Instance, values: Values, set: (key: string, value: any) -> ()): Modal.Modal
+-- `changed` fires a setting's key when SettingsController changes it from outside the window (saved values
+-- arriving on join), or "Record" when `getRecord()`'s text changes.
+function SettingsScreen.create(
+	parent: Instance,
+	values: Values,
+	set: (key: string, value: any) -> (),
+	changed: Signal.Signal<string>,
+	getRecord: () -> string
+): Modal.Modal
 	local modal = Modal.new(parent, {
 		name = "SettingsScreen",
 		title = "SETTINGS",
@@ -33,8 +42,9 @@ function SettingsScreen.create(parent: Instance, values: Values, set: (key: stri
 	list.VerticalAlignment = Enum.VerticalAlignment.Center
 	list.Parent = modal.content
 
+	local sliders: { [string]: Slider.Slider } = {}
 	local step = SettingsConfig.SliderStep
-	Slider.new(modal.content, {
+	sliders.MusicVolume = Slider.new(modal.content, {
 		caption = "Music",
 		min = 0,
 		max = 1,
@@ -46,7 +56,7 @@ function SettingsScreen.create(parent: Instance, values: Values, set: (key: stri
 			set("MusicVolume", value)
 		end,
 	})
-	Slider.new(modal.content, {
+	sliders.SfxVolume = Slider.new(modal.content, {
 		caption = "Sound effects",
 		min = 0,
 		max = 1,
@@ -58,7 +68,7 @@ function SettingsScreen.create(parent: Instance, values: Values, set: (key: stri
 			set("SfxVolume", value)
 		end,
 	})
-	Slider.new(modal.content, {
+	sliders.CameraSensitivity = Slider.new(modal.content, {
 		caption = "Camera speed",
 		min = SettingsConfig.CameraSensitivityMin,
 		max = SettingsConfig.CameraSensitivityMax,
@@ -108,14 +118,26 @@ function SettingsScreen.create(parent: Instance, values: Values, set: (key: stri
 	})
 	paint()
 
-	Label.new(modal.content, {
-		text = "Settings last until you leave the server.",
+	local record = Label.new(modal.content, {
+		text = getRecord(),
 		color = Theme.Colors.InkSoft,
 		size = UDim2.fromScale(1, 0.08),
 		order = 5,
 		maxTextSize = 16,
-	}).ZIndex =
-		4
+	})
+	record.ZIndex = 4
+
+	-- Saved values arriving on join move the controls; the record line follows the saved stats.
+	changed:connect(function(key: string)
+		local slider = sliders[key]
+		if slider then
+			slider.set(values[key])
+		elseif key == "WormMouthView" then
+			paint()
+		elseif key == "Record" then
+			record.Text = getRecord()
+		end
+	end)
 
 	return modal
 end

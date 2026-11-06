@@ -123,7 +123,13 @@ function LobbyController.init()
 		end,
 	})
 	modals.Shop = ShopScreen.create(playerGui)
-	modals.Settings = SettingsScreen.create(playerGui, SettingsController.get() :: any, SettingsController.set)
+	modals.Settings = SettingsScreen.create(
+		playerGui,
+		SettingsController.get() :: any,
+		SettingsController.set,
+		SettingsController.changed,
+		SettingsController.getRecordText
+	)
 end
 
 function LobbyController.start()
