@@ -120,7 +120,10 @@ local function load(player: Player): Types.Profile?
 		elseif lockedElsewhere then
 			lockWaits += 1
 			task.wait(Progression.LockWaitSeconds)
-		elseif string.find(tostring(result), "StudioAccessToApisNotAllowed", 1, true) then
+		elseif
+			string.find(tostring(result), "StudioAccessToApisNotAllowed", 1, true)
+			or string.find(tostring(result), "API access is not enabled", 1, true)
+		then
 			-- Studio with "Enable Studio Access to API Services" off: retrying can't help.
 			warn("[DataService] Studio has no DataStore access (Game Settings > Security); data won't be saved")
 			store = nil
