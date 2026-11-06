@@ -1,6 +1,7 @@
 # PROGRESS
 
-Last updated: 2026-10-18 (Phase 13 — Lobby & UI overhaul built, all 6 steps; awaiting human tests).
+Last updated: 2026-11-05 (merged in the work from a second checkout — canyon border, sounds, saving,
+mobile controls, debug off; see "Merged 2026-11-05" below. Phase 13 still awaiting human tests).
 Rewrite this file at the end of every phase (CLAUDE.md §17).
 
 ## Phases completed
@@ -33,8 +34,19 @@ Rewrite this file at the end of every phase (CLAUDE.md §17).
   Pack pass) as palette-texture variants. `CosmeticsService` checks pass ownership server-side
   (`OwnedPasses` attribute; `Request_SetWormSkin`); WormService dresses the head, each client its segments
   (`Skin` attribute, `shared/WormSkin`). Lobby Cosmetics window = skin picker with a turning 3D preview.
-  `Debug.UnlockAllCosmetics` (Studio only) unlocks everything for testing. Choice is per session (no saving).
-- Deferred by the spec ("Later"): wormlings, cosmetics, mobile controls, data saving.
+  `Debug.UnlockAllCosmetics` (Studio only) unlocks everything for testing. The choice is now saved.
+- **Merged 2026-11-05** (from a second, older checkout; its full history is on branch `session-local`):
+  - Canyon border: `Map/Canyon` (terraced cliffs, barrier) around the `MapBounds` volume, built into the map
+    folder so it parks with the map; `shared/Util/MapBounds` clamps the worm head and ghosts.
+  - Sounds: 23 synthesized originals (`tools/audio/synth_sfx.py`, `assets/audio/`) fill every slot in
+    `Config/Sounds` incl. the UI sounds; Pickup/Throw cues; desert wind = `Settings.Music.Match`.
+  - Saving: `DataService` (`Config/Progression`) — Settings values, chosen worm skin, lifetime stats
+    (rounds, escapes, worm wins, shown in the Settings window). `State_Profile`, `Request_SaveSettings`.
+  - Mobile: `TouchController` + `UI/TouchControls` (Phase 13 components), InputController press/release/
+    virtual stick, nearest-item pickup on touch, tappable bag slots. `Debug.ForceTouchControls`.
+  - `Debug.Enabled = false`. Store thumbnails in `marketing/thumbnails/` (1920×1080, staged in Studio).
+  - Dropped from that checkout (this version already had better ones): its lobby, coin store, hats, models.
+- Deferred by the spec ("Later"): wormlings.
 
 ## What each file does (Phase 13 additions; older files are described in their header comments)
 
@@ -89,8 +101,10 @@ Earlier (still true)
   spectate, weights over several rounds, kill feed from a real grab); Phase 11 abilities; balloon escape.
 - Studio's play viewport during the MCP checks was portrait (296–540 px wide), narrower than real phones
   (landscape). Layouts were fixed for it, but check the Device emulator at a landscape phone and 1080p.
-- No real sounds/music/particles/animations (`TODO(asset)`; UI and music ids empty).
-- Worm skins in a real round need a 2P test (solo can't be the Worm). Skins reset on rejoin (no data saving).
+- No particles/animations yet; lobby music id is empty (match music = desert wind).
+- Worm skins in a real round need a 2P test (solo can't be the Worm).
+- Saving only works in a published place or with Studio API access on; untested against a live DataStore.
+- Touch controls checked with `ForceTouchControls` in Studio only, not on a phone.
 - Results match the local player by DisplayName. Each OpenSafe adds a `Request_SafeCode` limiter (tiny leak).
 - Zipline ends hooked high up drop you at the hit point. Rifle recoil can launch you upward.
 - `ContentId rbxassetid://203785492 ... Asset type does not match` warning on Play — not from our code.
@@ -102,4 +116,5 @@ Earlier (still true)
 1. User runs CHECKLIST.md Phase 13 steps 2–6 (2-player local server for roles, spectate, kill feed).
 2. Fix what they find; then restyle MinigameHud / KeypadScreen / PuzzleMapHud with the components.
 3. Still owed: 2P tests of worm abilities, balloon escape, grab-related kits (CHECKLIST 10–12).
-4. Create the game passes and paste their ids into `Config/Shop`; add sound / music ids.
+4. Create the game passes and paste their ids into `Config/Shop`; add a lobby music id.
+5. Publish privately, then test saving (change a setting, rejoin) and the touch controls on a real phone.
