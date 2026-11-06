@@ -20,10 +20,10 @@ return {
 		UpOffset = 1,
 	},
 
-	-- Background music (looped, silent while the id is empty). TODO(asset)
+	-- Background music (looped, silent while the id is empty). Match = the synthesized desert wind.
 	Music = {
 		Lobby = { id = "", volume = 0.5 },
-		Match = { id = "", volume = 0.4 },
+		Match = { id = "rbxassetid://72752124980275", volume = 0.4 },
 		FadeSeconds = 1.5,
 	},
 }

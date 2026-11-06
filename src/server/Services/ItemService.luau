@@ -30,6 +30,7 @@ local ThrowLogic = require(ReplicatedStorage.Shared.ThrowLogic)
 local Types = require(ReplicatedStorage.Shared.Types)
 local Signal = require(ReplicatedStorage.Shared.Util.Signal)
 local TagDefs = require(ReplicatedStorage.Shared.Util.Tags)
+local SoundCue = require(script.Parent.Parent.Util.SoundCue)
 local PardnerService = require(script.Parent.PardnerService)
 
 local Debug = GameConfig.Debug
@@ -441,6 +442,7 @@ local function onPickup(player: Player, target: any)
 		notify(player, "Your hands and bag are full")
 		return
 	end
+	SoundCue.play("Pickup", root.Position)
 	sendInventory(player)
 end
 
@@ -506,6 +508,7 @@ local function onThrow(player: Player, direction: any, power: any)
 	local kitDef = inventory.kit and Kits[inventory.kit.id]
 	local mult = kitDef and kitDef.params.PassiveThrowPowerMult or 1
 	releaseItem(record, CFrame.new(origin) * root.CFrame.Rotation, ThrowLogic.velocity(unit, power, mult), player)
+	SoundCue.play("Throw", origin)
 	sendInventory(player)
 end
 

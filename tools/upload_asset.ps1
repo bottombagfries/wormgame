@@ -1,11 +1,12 @@
 # Uploads one file to Roblox with Open Cloud (Assets API) and prints only the new asset id.
 #   powershell -File tools/upload_asset.ps1 -File assets/models/Items/SmallCoal.fbx -Type Model -Name SmallCoal
 #   powershell -File tools/upload_asset.ps1 -File assets/textures/WT_Palette.png -Type Decal -Name WT_Palette
+#   powershell -File tools/upload_asset.ps1 -File assets/audio/Sfx_Explosion.wav -Type Audio -Name Sfx_Explosion
 # Reads ROBLOX_API_KEY and ROBLOX_CREATOR_ID (a user id; set ROBLOX_CREATOR_TYPE=group for a group) from the
 # environment. The key is never printed or written anywhere.
 param(
 	[Parameter(Mandatory = $true)][string]$File,
-	[Parameter(Mandatory = $true)][ValidateSet("Model", "Decal")][string]$Type,
+	[Parameter(Mandatory = $true)][ValidateSet("Model", "Decal", "Audio")][string]$Type,
 	[Parameter(Mandatory = $true)][string]$Name,
 	[int]$TimeoutSeconds = 120
 )
@@ -20,6 +21,7 @@ $extension = [IO.Path]::GetExtension($path).ToLower()
 $contentType = switch ($extension) {
 	".fbx" { "model/fbx" }
 	".png" { "image/png" }
+	".wav" { "audio/wav" }
 	default { throw "Unsupported file type $extension" }
 }
 $creator = if ($env:ROBLOX_CREATOR_TYPE -eq "group") { @{ groupId = "$creatorId" } } else { @{ userId = "$creatorId" } }
