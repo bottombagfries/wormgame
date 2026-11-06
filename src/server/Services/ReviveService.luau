@@ -17,12 +17,14 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local AssetService = require(ReplicatedStorage.Shared.AssetService)
+local GameConfig = require(ReplicatedStorage.Shared.Config.Game)
 local Kits = require(ReplicatedStorage.Shared.Config.Kits)
 local PardnerConfig = require(ReplicatedStorage.Shared.Config.Pardner)
 local Structures = require(ReplicatedStorage.Shared.Config.Structures)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Types = require(ReplicatedStorage.Shared.Types)
 local Ground = require(ReplicatedStorage.Shared.Util.Ground)
+local MapBounds = require(ReplicatedStorage.Shared.Util.MapBounds)
 local Signal = require(ReplicatedStorage.Shared.Util.Signal)
 local TagDefs = require(ReplicatedStorage.Shared.Util.Tags)
 local ItemService = require(script.Parent.ItemService)
@@ -323,6 +325,15 @@ local function step(dt: number)
 		end
 	end
 	checkChurch()
+
+	-- Ghosts fly through the canyon rock; pull any that got past the bounds back in.
+	local canyon = GameConfig.Canyon
+	for _, ghost in ghosts do
+		local position = ghost.part.Position
+		if MapBounds.overshoot(position, canyon.WormMargin) > canyon.ServerSlack then
+			ghost.model:PivotTo(CFrame.new(MapBounds.clamp(position, canyon.WormMargin)))
+		end
+	end
 end
 
 -- Match lifecycle -------------------------------------------------------------------------------

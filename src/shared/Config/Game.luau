@@ -184,4 +184,51 @@ return {
 			CactusSpot = 60,
 		},
 	},
+
+	-- Map bounds: canyon cliffs ring the playable area (a `MapBounds` volume marker; the greybox map makes
+	-- one from its Size). Pardners are stopped by the rock + an invisible barrier; the worm and ghosts pass
+	-- through parts, so they are clamped to the bounds on their client and checked on the server. All TUNE.
+	Canyon = {
+		Enabled = true, -- false if your own map already has walls (the clamp still uses MapBounds)
+		Width = 110, -- how far the rock reaches outward from the edge
+		Height = 130, -- top of the highest terrace above the ground
+		Sink = 12, -- rock goes this far below the ground so no gaps show at the foot
+		SegmentLength = 36, -- rock columns along each side
+		SegmentOverlap = 1.3, -- columns are this much wider than their spacing, so faces never gap
+		Jag = 7, -- max random extra setback of a column's inner face (outward only)
+		-- Terraces, from the inner face outward: setback from the edge, height as a fraction of Height.
+		Terraces = {
+			{ Setback = 0, HeightFraction = 0.42, Color = Color3.fromRGB(150, 78, 48), Material = Enum.Material.Rock },
+			{
+				Setback = 14,
+				HeightFraction = 0.7,
+				Color = Color3.fromRGB(190, 110, 66),
+				Material = Enum.Material.Sandstone,
+			},
+			{
+				Setback = 30,
+				HeightFraction = 0.88,
+				Color = Color3.fromRGB(214, 150, 96),
+				Material = Enum.Material.Sandstone,
+			},
+			{
+				Setback = 52,
+				HeightFraction = 1,
+				Color = Color3.fromRGB(226, 182, 128),
+				Material = Enum.Material.Sandstone,
+			},
+		},
+		HeightJitter = 0.15, -- each column's height varies by up to this fraction
+		StrataBand = 3, -- thickness of the dark band laid along the top of each terrace
+		StrataColor = Color3.fromRGB(112, 58, 40),
+		BouldersPerSide = 14,
+		BoulderSize = NumberRange.new(5, 13),
+		BoulderReach = 6, -- boulders may poke this far into the playable area
+		BoulderColor = Color3.fromRGB(135, 80, 55),
+		BarrierHeight = 400, -- invisible wall above the cliffs (pogo, zipline flings, ragdolls)
+		BarrierThickness = 4,
+		WormMargin = 6, -- worm head and ghosts stay this far inside the edge
+		ServerSlack = 4, -- the server only snaps them back when they are this far past the margin
+		Seed = 7,
+	},
 }

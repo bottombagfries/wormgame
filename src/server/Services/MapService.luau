@@ -21,8 +21,10 @@ local Structures = require(ReplicatedStorage.Shared.Config.Structures)
 local Types = require(ReplicatedStorage.Shared.Types)
 local Geometry = require(ReplicatedStorage.Shared.Util.Geometry)
 local Ground = require(ReplicatedStorage.Shared.Util.Ground)
+local MapBounds = require(ReplicatedStorage.Shared.Util.MapBounds)
 local RandomUtil = require(ReplicatedStorage.Shared.Util.Random)
 local TagDefs = require(ReplicatedStorage.Shared.Util.Tags)
+local Canyon = require(script.Parent.Parent.Map.Canyon)
 local Chests = require(script.Parent.Parent.Map.Chests)
 local GreyboxMap = require(script.Parent.Parent.Map.GreyboxMap)
 local Lobby = require(script.Parent.Parent.Map.Lobby)
@@ -38,6 +40,7 @@ local Tags = TagDefs.Tags
 
 local MAP_FOLDER = "MapTemplate"
 local RUNTIME_FOLDER = "MapRuntime"
+local CANYON_FOLDER = "Canyon"
 local MARKER_LABEL_SIZE = UDim2.fromOffset(120, 18)
 local SAND_PROBE_HEIGHT = 200 -- loose loot looks down from this high, so roofs count as "not sand"
 
@@ -100,6 +103,35 @@ local function spawnTestWall()
 	wall.Material = Enum.Material.Brick
 	wall.Color = Color3.fromRGB(150, 110, 90)
 	wall.Parent = mapFolder
+end
+
+-- The playable area from the MapBounds marker (bottom face = the ground), or a greybox-sized square
+-- around the origin. Treated as axis-aligned; a rotated marker is read as if it weren't.
+local function resolveBounds(): (Vector3, Vector3)
+	local markers = MapService.getMarkers(Tags.MapBounds)
+	if #markers > 1 then
+		warn(`[MapService] {#markers} "{Tags.MapBounds}" markers - only the first is used`)
+	end
+	local marker = markers[1]
+	if marker then
+		return marker.Position - Vector3.yAxis * (marker.Size.Y / 2), marker.Size
+	end
+	local greybox = GameConfig.GreyboxMap
+	warn(`[MapService] No "{Tags.MapBounds}" marker - the map bounds are a {greybox.Size}-stud square at the origin`)
+	return Vector3.new(0, greybox.GroundY, 0), Vector3.new(greybox.Size, GameConfig.Canyon.BarrierHeight, greybox.Size)
+end
+
+-- The canyon goes inside the map folder, so it is parked in ServerStorage with the rest of the map between
+-- rounds. The bounds (MapBounds) stay published: they only matter while a round is on.
+local function setupBounds()
+	local center, size = resolveBounds()
+	MapBounds.set(center, size)
+	if GameConfig.Canyon.Enabled then
+		local folder = Instance.new("Folder")
+		folder.Name = CANYON_FOLDER
+		Canyon.build(folder, center, size)
+		folder.Parent = mapFolder
+	end
 end
 
 -- Population helpers ----------------------------------------------------------------------------
@@ -427,6 +459,7 @@ function MapService.init()
 		print(`[MapService] Workspace/{MAP_FOLDER} is empty - building the greybox map`)
 		GreyboxMap.build(mapFolder)
 	end
+	setupBounds()
 	Lobby.build()
 end
 

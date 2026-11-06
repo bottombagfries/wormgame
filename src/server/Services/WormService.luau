@@ -18,11 +18,13 @@ local Workspace = game:GetService("Workspace")
 
 local AssetService = require(ReplicatedStorage.Shared.AssetService)
 local Abilities = require(ReplicatedStorage.Shared.Config.Abilities)
+local GameConfig = require(ReplicatedStorage.Shared.Config.Game)
 local Structures = require(ReplicatedStorage.Shared.Config.Structures)
 local WormConfig = require(ReplicatedStorage.Shared.Config.Worm)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Types = require(ReplicatedStorage.Shared.Types)
 local Ground = require(ReplicatedStorage.Shared.Util.Ground)
+local MapBounds = require(ReplicatedStorage.Shared.Util.MapBounds)
 local Signal = require(ReplicatedStorage.Shared.Util.Signal)
 local TagDefs = require(ReplicatedStorage.Shared.Util.Tags)
 local WormSkin = require(ReplicatedStorage.Shared.WormSkin)
@@ -41,6 +43,7 @@ local WORMS_FOLDER = "Worms"
 local AUTO_INPUT = "Auto"
 local DRAIN_INTERVAL = 0.25 -- seconds between mouth-damage ticks (keeps State_Pardner traffic down)
 local MODE_SETTLE_SECONDS = 1 -- a freshly burrowed head gets this long to sink before the height check
+local CANYON = GameConfig.Canyon
 
 type Grab = {
 	worm: Worm,
@@ -472,6 +475,10 @@ local function step(dt: number)
 			updateAirborne(worm, position)
 		end
 		validate(worm, position, dt)
+		-- The head passes through the canyon rock, so the bounds are enforced here.
+		if MapBounds.overshoot(head.Position, CANYON.WormMargin) > CANYON.ServerSlack then
+			teleport(worm, MapBounds.clamp(head.Position, CANYON.WormMargin))
+		end
 		heal(worm, position, dt)
 		local grab = worm.grab
 		if grab then

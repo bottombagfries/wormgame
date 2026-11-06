@@ -14,12 +14,14 @@ local Workspace = game:GetService("Workspace")
 
 local AssetService = require(ReplicatedStorage.Shared.AssetService)
 local Abilities = require(ReplicatedStorage.Shared.Config.Abilities)
+local GameConfig = require(ReplicatedStorage.Shared.Config.Game)
 local PardnerConfig = require(ReplicatedStorage.Shared.Config.Pardner)
 local SettingsConfig = require(ReplicatedStorage.Shared.Config.Settings)
 local WormConfig = require(ReplicatedStorage.Shared.Config.Worm)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Types = require(ReplicatedStorage.Shared.Types)
 local Ground = require(ReplicatedStorage.Shared.Util.Ground)
+local MapBounds = require(ReplicatedStorage.Shared.Util.MapBounds)
 local TagDefs = require(ReplicatedStorage.Shared.Util.Tags)
 local WormSkin = require(ReplicatedStorage.Shared.WormSkin)
 local InputController = require(script.Parent.InputController)
@@ -30,6 +32,7 @@ local Tags = TagDefs.Tags
 local UNLOCKED_MAX_ZOOM = 1e5 -- lets min and max zoom be set in either order
 local LAUNCH_GRACE = 0.5 -- seconds the client treats itself as airborne after a launch, until Mode catches up
 local MOUND_MOVING_SPEED = 2 -- studs/s; a still worm shows no mound to Pardners
+local BOUNDS_MARGIN = GameConfig.Canyon.WormMargin
 local PICK_ACTIONS: { [string]: number } = { WormAbility1 = 1, WormAbility2 = 2 } -- keys for the chosen two
 
 type Visual = {
@@ -195,8 +198,13 @@ local function control(worm: Model, head: BasePart, camera: Camera)
 	end
 
 	if mode == "Airborne" or os.clock() < launchUntil then
-		-- Ballistic: gravity does the work.
+		-- Ballistic: gravity does the work, but a launch can't carry it over the canyon.
 		drive.Enabled = false
+		local launched = head.AssemblyLinearVelocity
+		local limited = MapBounds.limitVelocity(position, launched, BOUNDS_MARGIN)
+		if limited ~= launched then
+			head.AssemblyLinearVelocity = limited
+		end
 		local velocity = head.AssemblyLinearVelocity
 		if velocity.Magnitude > 1 then
 			align.CFrame = CFrame.lookAt(Vector3.zero, velocity)
@@ -249,6 +257,7 @@ local function control(worm: Model, head: BasePart, camera: Camera)
 		-WormConfig.MaxVerticalSpeed,
 		WormConfig.MaxVerticalSpeed
 	)
+	horizontal = MapBounds.limitVelocity(position, horizontal, BOUNDS_MARGIN)
 	drive.VectorVelocity = horizontal + Vector3.yAxis * vertical
 	drive.Enabled = true
 	if horizontal.Magnitude > 0.1 then

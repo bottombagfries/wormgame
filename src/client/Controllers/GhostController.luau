@@ -12,8 +12,10 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
+local GameConfig = require(ReplicatedStorage.Shared.Config.Game)
 local PardnerConfig = require(ReplicatedStorage.Shared.Config.Pardner)
 local Net = require(ReplicatedStorage.Shared.Net)
+local MapBounds = require(ReplicatedStorage.Shared.Util.MapBounds)
 local TagDefs = require(ReplicatedStorage.Shared.Util.Tags)
 local InputController = require(script.Parent.InputController)
 local InventoryController = require(script.Parent.InventoryController)
@@ -96,7 +98,9 @@ local function fly(part: BasePart, camera: Camera)
 	local vertical = (if InputController.isHeld("GhostUp") then 1 else 0)
 		- (if InputController.isHeld("GhostDown") then 1 else 0)
 	local direction = cframe.LookVector * -move.Z + cframe.RightVector * move.X + Vector3.yAxis * vertical
-	drive.VectorVelocity = direction * GhostConfig.FlySpeed
+	-- Ghosts fly through walls, so the canyon can't stop them; the map bounds do.
+	drive.VectorVelocity =
+		MapBounds.limitVelocity(part.Position, direction * GhostConfig.FlySpeed, GameConfig.Canyon.WormMargin)
 
 	if camera.CameraSubject ~= part then
 		camera.CameraType = Enum.CameraType.Custom

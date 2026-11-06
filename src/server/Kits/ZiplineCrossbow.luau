@@ -109,6 +109,11 @@ local ZiplineCrossbow: Types.KitModule = {
 			context.notify("The harpoon found nothing to hook into")
 			return false
 		end
+		-- No riding up onto the canyon rim.
+		if hit.Instance:GetAttribute("MapBoundary") == true then
+			context.notify("The harpoon can't bite into the canyon rock")
+			return false
+		end
 
 		local parent = MapService.getRuntimeFolder() or Workspace
 		local target = hit.Position

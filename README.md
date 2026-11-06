@@ -34,6 +34,12 @@ Build inside `Workspace/MapTemplate` and place invisible, anchored, non-collidin
 CollectionService tags (`TrainSpot`, `RanchSpot`, `Sand`, …). The full tag list is in `CLAUDE.md` §4.
 If a tag has no markers, the server prints a warning and uses a fallback position instead of erroring.
 
+**Map edge:** add one box marker tagged `MapBounds` covering the playable area (its bottom face on the
+ground). Canyon cliffs are built around it at server start, with an invisible barrier above them, and the
+worm and ghosts are kept inside it. Without one, the bounds are a 1024-stud square around the origin.
+If your map already has its own walls, set `Canyon.Enabled = false` in `Config/Game.luau` (the worm and
+ghost limits still use `MapBounds`). Cliff size, terraces and colors are all in that `Canyon` table.
+
 Structure models can carry extras the code looks for: parts named `Wall`/`Body` take the house color and
 `Roof`/`Trim` the trim color, `LootPoint` attachments mark where loot goes, and a Church part named
 `ReviveRing` sets where the revive ring is. The Train model can contain parts named `Furnace`, `Lever`,

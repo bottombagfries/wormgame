@@ -18,6 +18,7 @@ local Tags = {
 	DigArea = "DigArea",
 	LooseItemArea = "LooseItemArea",
 	CactusSpot = "CactusSpot",
+	MapBounds = "MapBounds", -- optional: one box volume = the playable area; canyon cliffs ring it
 
 	-- Runtime
 	Item = "Item",
@@ -52,6 +53,7 @@ local Volumes = {
 	[Tags.Sand] = true,
 	[Tags.DigArea] = true,
 	[Tags.LooseItemArea] = true,
+	[Tags.MapBounds] = true,
 }
 
 return {

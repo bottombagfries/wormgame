@@ -145,7 +145,14 @@ function GreyboxMap.build(mapFolder: Instance)
 		makeMarker(markers, Tags.CactusSpot, CFrame.new(point) * randomYaw(rng))
 	end
 
-	-- Volumes
+	-- Volumes. The bounds box sits on the ground and is as tall as the canyon's invisible barrier.
+	local boundsHeight = GameConfig.Canyon.BarrierHeight
+	makeMarker(
+		markers,
+		Tags.MapBounds,
+		CFrame.new(0, MAP.GroundY + boundsHeight / 2, 0),
+		Vector3.new(MAP.Size, boundsHeight, MAP.Size)
+	)
 	for _, area in MAP.DigAreas do
 		makeMarker(markers, Tags.DigArea, CFrame.new(ground(area.Position)), area.Size)
 	end
