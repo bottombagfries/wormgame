@@ -29,6 +29,7 @@ local CONTROLLER_ORDER = {
 	"WormVisionController",
 	"MinigameController",
 	"GhostController",
+	"TouchController",
 }
 
 local controllersFolder = script:FindFirstChild("Controllers")

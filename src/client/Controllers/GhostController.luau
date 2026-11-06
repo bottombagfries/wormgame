@@ -54,9 +54,10 @@ local function getLocalGhost(): Model?
 	return nil
 end
 
--- The loose item under the cursor, if it is close enough to this ghost to push.
+-- The loose item under the cursor (screen center on touch screens, where the camera does the aiming),
+-- if it is close enough to this ghost to push.
 local function findTarget(camera: Camera, ghostPosition: Vector3): Model?
-	local mouse = UserInputService:GetMouseLocation()
+	local mouse = if InputController.isTouch() then camera.ViewportSize / 2 else UserInputService:GetMouseLocation()
 	local ray = camera:ViewportPointToRay(mouse.X, mouse.Y)
 	local result = Workspace:Raycast(ray.Origin, ray.Direction * PardnerConfig.HoverRayLength, rayParams)
 	if not result then

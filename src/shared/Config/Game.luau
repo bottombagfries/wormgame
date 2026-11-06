@@ -92,6 +92,7 @@ return {
 		MarkerTransparency = 0.5,
 		LabelMaxDistance = 120,
 		LogBootstrap = true,
+		ForceTouchControls = false, -- show the phone buttons with a mouse (or use Studio's device emulator)
 		AllowSoloMatch = true, -- a match can start with one player (a Pardner, no Worm)
 		NoWorm = false, -- everyone is a Pardner (for testing death and revive with two players)
 		SpawnTestItems = true, -- a row of greybox items by the spawn

@@ -26,6 +26,7 @@ local Tags = TagDefs.Tags
 local Arc = PardnerConfig.ThrowArc
 local BAG_ACTION_PREFIX = "Bag"
 local SHOVEL = "Shovel"
+local ITEMS_FOLDER = "Items" -- ItemService's Workspace folder of world items
 
 local InventoryController = {}
 
@@ -78,8 +79,38 @@ local function describe(model: Model): string
 	return text
 end
 
+-- Touch screens have no cursor: the closest loose item in reach, favouring what's in front of you.
+local function findNearest(root: BasePart): Model?
+	local folder = Workspace:FindFirstChild(ITEMS_FOLDER)
+	if not folder then
+		return nil
+	end
+	local best: Model? = nil
+	local bestScore = math.huge
+	local facing = root.CFrame.LookVector
+	for _, model in folder:GetChildren() do
+		local primary = if model:IsA("Model") then model.PrimaryPart else nil
+		if not primary or primary:FindFirstChild("HoldWeld") then
+			continue
+		end
+		local offset = (model :: Model):GetPivot().Position - root.Position
+		local reach = PardnerConfig.PickupRange + (model :: Model):GetExtentsSize().Magnitude / 2
+		if offset.Magnitude <= reach then
+			local ahead = if offset.Magnitude > 0 then facing:Dot(offset.Unit) else 1
+			local score = offset.Magnitude * (1.5 - ahead * 0.5)
+			if score < bestScore then
+				best, bestScore = model :: Model, score
+			end
+		end
+	end
+	return best
+end
+
 -- The item under the crosshair (aiming) or the mouse cursor, if it is close enough to pick up.
 local function findHovered(camera: Camera, root: BasePart): Model?
+	if InputController.isTouch() and not CameraController.isAiming() then
+		return findNearest(root)
+	end
 	local point = if CameraController.isAiming() then camera.ViewportSize / 2 else UserInputService:GetMouseLocation()
 	local ray = camera:ViewportPointToRay(point.X, point.Y)
 	local result = Workspace:Raycast(ray.Origin, ray.Direction * PardnerConfig.HoverRayLength, rayParams)
@@ -262,7 +293,11 @@ function InventoryController.init()
 		table.insert(arcDots, dot)
 	end
 
-	hud = InventoryHud.create(player:WaitForChild("PlayerGui"))
+	hud = InventoryHud.create(player:WaitForChild("PlayerGui"), function(index: number)
+		local action = `{BAG_ACTION_PREFIX}{index}`
+		InputController.press(action)
+		InputController.release(action)
+	end, InputController.isTouch())
 	hud.setState(state)
 end
 

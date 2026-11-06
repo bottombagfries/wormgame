@@ -27,6 +27,8 @@ local ROW_MIN_PX = 40
 local ROW_MAX_PX = 96
 local HAND_HINT = "Q store · G drop · R use · hold RMB + LMB throw"
 local EMPTY_HINT = "E pick up"
+local TOUCH_HAND_HINT = "Stow · Drop · Use · Aim, then Throw · tap a bag slot to take it out"
+local TOUCH_EMPTY_HINT = "Grab picks up the nearest item"
 local CONTINUED = "·" -- the extra slots a big item takes up
 
 local InventoryHud = {}
@@ -61,7 +63,11 @@ local function pill(parent: Instance, name: string, size: UDim2, position: UDim2
 	return frame
 end
 
-function InventoryHud.create(parent: Instance): Hud
+-- `onBagSlot(index)` runs when a filled bag slot is tapped or clicked (take that item out); `touch` swaps
+-- in phone hints.
+function InventoryHud.create(parent: Instance, onBagSlot: (index: number) -> (), touch: boolean): Hud
+	local handHint = if touch then TOUCH_HAND_HINT else HAND_HINT
+	local emptyHint = if touch then TOUCH_EMPTY_HINT else EMPTY_HINT
 	local colors = Theme.Colors
 	local gui = Style.screen("InventoryHud", 2)
 
@@ -162,6 +168,7 @@ function InventoryHud.create(parent: Instance): Hud
 	gui.Parent = parent
 
 	local bagSlots: { Slot.Slot } = {}
+	local slotItem: { [number]: number } = {} -- bag slot position -> index of the item filling it
 	local lastKit: string? = nil
 	-- Kit + bag slots (+ a little for the divider) always fit across the row.
 	local function fit()
@@ -184,19 +191,37 @@ function InventoryHud.create(parent: Instance): Hud
 
 			-- Bag: one Slot per unit of capacity.
 			while #bagSlots < state.capacity do
-				table.insert(bagSlots, Slot.new(row, { size = UDim2.fromScale(1, 1), order = #bagSlots + 2 }))
+				local slot = Slot.new(row, { size = UDim2.fromScale(1, 1), order = #bagSlots + 2 })
+				table.insert(bagSlots, slot)
+				-- An invisible button over the slot: tap / click to take that item out of the bag.
+				local position = #bagSlots
+				local tap = Instance.new("TextButton")
+				tap.Name = "Tap"
+				tap.BackgroundTransparency = 1
+				tap.Text = ""
+				tap.Size = UDim2.fromScale(1, 1)
+				tap.ZIndex = 10
+				tap.Parent = slot.frame
+				tap.Activated:Connect(function()
+					local index = slotItem[position]
+					if index then
+						onBagSlot(index)
+					end
+				end)
 			end
 			while #bagSlots > state.capacity do
 				(table.remove(bagSlots) :: Slot.Slot).frame:Destroy()
 			end
 			fit()
 			local cursor = 1
+			table.clear(slotItem)
 			for index, itemId in state.bag do
 				for part = 1, slotsOf(itemId) do
 					local slot = bagSlots[cursor]
 					if slot then
 						slot.setItem(if part == 1 then `[{index}] {displayName(itemId)}` else CONTINUED)
 					end
+					slotItem[cursor] = index
 					cursor += 1
 				end
 			end
@@ -205,8 +230,8 @@ function InventoryHud.create(parent: Instance): Hud
 			end
 
 			handText.Text = if state.hand
-				then `Hands: {displayName(state.hand)}   ({HAND_HINT})`
-				else `Hands: empty   ({EMPTY_HINT})`
+				then `Hands: {displayName(state.hand)}   ({handHint})`
+				else `Hands: empty   ({emptyHint})`
 		end,
 		setHover = function(adornee: Instance?, text: string)
 			hover.Adornee = adornee

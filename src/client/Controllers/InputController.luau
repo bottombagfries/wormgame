@@ -1,14 +1,18 @@
 --!strict
 -- Turns raw input into named actions from Config/Keybinds. Other controllers ask this module
--- instead of reading keys themselves. Mobile comes later.
+-- instead of reading keys themselves. Touch screens drive the same actions through press()/release()
+-- (TouchController's buttons) and setVirtualMove() (its thumbstick, for the worm and ghosts).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 local UserInputService = game:GetService("UserInputService")
 
+local GameConfig = require(ReplicatedStorage.Shared.Config.Game)
 local Keybinds = require(ReplicatedStorage.Shared.Config.Keybinds)
 local Signal = require(ReplicatedStorage.Shared.Util.Signal)
+
+local TOUCH_JUMP_DEBOUNCE = 0.25 -- JumpRequest repeats while the touch jump button is held
 
 local InputController = {}
 
@@ -23,6 +27,8 @@ InputController.letGoPressed = letGoPressed
 
 local held: { [string]: boolean } = {}
 local controls: any = nil -- the default PlayerModule's control module (keyboard, gamepad, touch)
+local virtualMove = Vector3.zero -- TouchController's thumbstick (X = right, Z = back)
+local lastTouchJump = 0
 
 local function matches(input: InputObject, action: string): boolean
 	local binds = Keybinds[action]
@@ -83,17 +89,64 @@ function InputController.getMoveVector(): Vector3
 	return InputController.getRawMoveVector()
 end
 
--- Same shape as getMoveVector, but straight from the Move* keybinds. Works without a character.
+-- Same shape as getMoveVector, but straight from the Move* keybinds (or the touch thumbstick). Works
+-- without a character.
 function InputController.getRawMoveVector(): Vector3
 	local x = (if held.MoveRight then 1 else 0) - (if held.MoveLeft then 1 else 0)
 	local z = (if held.MoveBack then 1 else 0) - (if held.MoveForward then 1 else 0)
-	local vector = Vector3.new(x, 0, z)
-	return if vector.Magnitude > 0 then vector.Unit else vector
+	local vector = Vector3.new(x, 0, z) + virtualMove
+	return if vector.Magnitude > 1 then vector.Unit else vector
+end
+
+-- True on phones/tablets (or when Debug.ForceTouchControls is on for testing with a mouse).
+function InputController.isTouch(): boolean
+	local debug = GameConfig.Debug
+	return UserInputService.TouchEnabled or (debug.Enabled and debug.ForceTouchControls == true)
+end
+
+-- On-screen buttons: hold `action` down / let it go, exactly like its key.
+function InputController.press(action: string)
+	if held[action] then
+		return
+	end
+	held[action] = true
+	actionPressed:fire(action)
+	if action == "Jump" then
+		jumpPressed:fire()
+	elseif action == "LetGo" then
+		letGoPressed:fire()
+	end
+end
+
+function InputController.release(action: string)
+	held[action] = nil
+end
+
+-- Flips a hold-style action (Aim on touch, where holding a button and steering is awkward).
+function InputController.toggle(action: string)
+	if held[action] then
+		InputController.release(action)
+	else
+		InputController.press(action)
+	end
+end
+
+function InputController.setVirtualMove(vector: Vector3)
+	virtualMove = vector
 end
 
 function InputController.init()
 	UserInputService.InputBegan:Connect(onInputBegan)
 	UserInputService.InputEnded:Connect(onInputEnded)
+	-- Roblox's touch jump button is "game processed", so InputBegan never sees it; climbing listens to
+	-- jumpPressed, so forward the jump request on touch screens.
+	UserInputService.JumpRequest:Connect(function()
+		local now = os.clock()
+		if InputController.isTouch() and now - lastTouchJump > TOUCH_JUMP_DEBOUNCE then
+			lastTouchJump = now
+			jumpPressed:fire()
+		end
+	end)
 	UserInputService.WindowFocusReleased:Connect(function()
 		table.clear(held)
 	end)
