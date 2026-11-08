@@ -36,7 +36,7 @@ return {
 
 	-- Sundown (§5.4)
 	Sundown = {
-		Enabled = true,
+		Enabled = false,
 		Seconds = 15 * 60,
 		MinSeconds = 5 * 60,
 		MaxSeconds = 40 * 60,
@@ -59,7 +59,10 @@ return {
 		VendingHoldSeconds = 0.5, -- TUNE
 
 		OnTrainHeight = 14, -- TUNE: a Pardner this far above the Train's top still counts as "on the Train"
-		FurnacePadding = 1, -- TUNE: the furnace swallows items this far outside its model
+		FurnacePadding = 2, -- TUNE: the furnace swallows items this far outside its model
+		FuelHoldSeconds = 0.3, -- TUNE: "Add fuel" prompt; burns the held item and all fuel in the bag
+		FurnaceFireColor = Color3.fromRGB(255, 140, 40),
+		FurnaceLightRange = 14, -- TUNE
 		PromptDistance = 10, -- TUNE
 		PromptSlack = 6, -- TUNE: extra studs the server allows on prompt distance
 		LeverHoldSeconds = 0.5, -- TUNE
@@ -85,7 +88,7 @@ return {
 	},
 
 	Debug = {
-		Enabled = false,
+		Enabled = true,
 		ShowUiSample = false, -- Phase 13: show the UI style sample screen on join
 		UnlockAllCosmetics = true, -- Studio only: every game pass counts as owned (test skins before the passes exist)
 		ShowMarkers = true, -- label every map marker

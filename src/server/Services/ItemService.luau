@@ -722,6 +722,28 @@ function ItemService.consumeHand(player: Player): boolean
 	return true
 end
 
+-- Removes every fuel item the Pardner carries (hand and bag, never a lit one) and returns the fuel total.
+-- Used by the furnace's "Add fuel" prompt (§6.3).
+function ItemService.takeFuel(player: Player): number
+	local inventory = inventories[player]
+	if not inventory or not getRoot(player) then
+		return 0
+	end
+	local carried: { ItemRecord } = table.clone(inventory.bag)
+	if inventory.hand then
+		table.insert(carried, inventory.hand)
+	end
+	local total = 0
+	for _, record in carried do
+		local fuel = record.def.fuel
+		if fuel and not record.fuseEndsAt then
+			total += fuel
+			record.model:Destroy() -- removeRecord takes it out of the hand / bag and updates the client
+		end
+	end
+	return total
+end
+
 -- Loose items within `radius` of `position` (by their pivot), with their definitions.
 function ItemService.getLooseNear(position: Vector3, radius: number): { Model }
 	local list = {}

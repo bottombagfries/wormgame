@@ -46,6 +46,7 @@ local furnaceCFrame: CFrame -- items inside this box are burned
 local furnaceSize: Vector3
 local leverPrompt: ProximityPrompt
 local hornPrompt: ProximityPrompt
+local fuelPrompt: ProximityPrompt
 local keyholePrompt: ProximityPrompt
 local notifyRemote: RemoteEvent
 
@@ -74,6 +75,7 @@ local function publish()
 		if boardedFor > 0 then now() + TrainConfig.EarlyDepartSeconds - boardedFor else nil
 	)
 	leverPrompt.Enabled = phase == "Ready"
+	fuelPrompt.Enabled = phase == "Fueling" and delivered < required
 	-- The horn is disabled once the lever has been pulled.
 	hornPrompt.Enabled = phase == "Fueling" or phase == "Ready"
 end
@@ -175,6 +177,21 @@ local function buildTrain()
 	furnaceCFrame = furnaceBoundsCFrame
 	furnaceSize = furnaceBoundsSize + Vector3.one * (TrainConfig.FurnacePadding * 2)
 
+	-- Make it read as a furnace: a fire glow, embers and a label (the model is a closed box).
+	local firePart = getPromptPart(furnace)
+	local light = Instance.new("PointLight")
+	light.Color = TrainConfig.FurnaceFireColor
+	light.Range = TrainConfig.FurnaceLightRange
+	light.Brightness = 2
+	light.Parent = firePart
+	local fire = Instance.new("Fire")
+	fire.Color = TrainConfig.FurnaceFireColor
+	fire.SecondaryColor = Color3.new(1, 0.3, 0)
+	fire.Size = 4
+	fire.Heat = 6
+	fire.Parent = firePart
+
+	fuelPrompt = makePrompt(furnace, "Furnace", "Add fuel", TrainConfig.FuelHoldSeconds)
 	leverPrompt = makePrompt(lever, "Train", "Pull lever", TrainConfig.LeverHoldSeconds)
 	hornPrompt = makePrompt(horn, "Train", "Sound horn", TrainConfig.HornHoldSeconds)
 	keyholePrompt = makePrompt(keyhole, "Keyhole", "Insert key", TrainConfig.KeyholeHoldSeconds)
@@ -233,8 +250,22 @@ local function onKeyhole(player: Player)
 	notifyRemote:FireAllClients("The Train Key is in!")
 end
 
+local function addFuel(amount: number)
+	if amount <= 0 then
+		return
+	end
+	delivered += amount
+	SoundCue.play("FurnaceBurn", furnaceCFrame.Position)
+	if delivered >= required then
+		delivered = required
+		notifyRemote:FireAllClients("The Train is fully fueled")
+	end
+	publish()
+end
+
+-- Fuel items thrown or dropped into the furnace burn.
 local function burnFuel()
-	local burned = false
+	local total = 0
 	local seen: { [Model]: boolean } = {}
 	for _, part in Workspace:GetPartBoundsInBox(furnaceCFrame, furnaceSize) do
 		local model, itemId = ItemService.findLooseItem(part)
@@ -242,21 +273,25 @@ local function burnFuel()
 			seen[model] = true
 			local fuel = Items[itemId].fuel
 			if fuel then
-				delivered += fuel
-				SoundCue.play("FurnaceBurn", furnaceCFrame.Position)
-				burned = true
+				total += fuel
 				ItemService.destroy(model)
 			end
 		end
 	end
-	if not burned then
+	addFuel(total)
+end
+
+-- "Add fuel" prompt: burns the held item and every fuel item in the bag.
+local function onAddFuel(player: Player)
+	if phase ~= "Fueling" or delivered >= required or not canUsePrompt(player, fuelPrompt) then
 		return
 	end
-	if delivered >= required then
-		delivered = required
-		notifyRemote:FireAllClients("The Train is fully fueled")
+	local total = ItemService.takeFuel(player)
+	if total <= 0 then
+		notifyRemote:FireClient(player, "You have nothing that burns - bring coal, furniture or junk")
+		return
 	end
-	publish()
+	addFuel(total)
 end
 
 local function depart()
@@ -421,6 +456,7 @@ function TrainService.init()
 end
 
 function TrainService.start()
+	fuelPrompt.Triggered:Connect(onAddFuel)
 	leverPrompt.Triggered:Connect(onLever)
 	hornPrompt.Triggered:Connect(onHorn)
 	keyholePrompt.Triggered:Connect(onKeyhole)
