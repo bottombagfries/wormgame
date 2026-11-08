@@ -19,6 +19,7 @@
       "StarterPlayerScripts": { "Client": { "$path": "src/client" } }
     },
     "Workspace": {
+      "$properties": { "StreamingEnabled": false },
       "$ignoreUnknownInstances": true,
       "MapTemplate": { "$className": "Folder", "$ignoreUnknownInstances": true }
     }

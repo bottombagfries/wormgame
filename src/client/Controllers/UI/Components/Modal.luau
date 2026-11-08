@@ -47,7 +47,8 @@ function Modal.new(parent: Instance, options: Options): Modal
 	scrim.BorderSizePixel = 0
 	scrim.Parent = gui
 
-	local panel = Panel.new(gui, {
+	-- The window shrinks on phones (the scrim stays full screen).
+	local panel = Panel.new(Style.phoneRoot(gui, "Center", Vector2.new(0.5, 0.5)), {
 		name = "Window",
 		title = options.title,
 		size = options.size or UDim2.fromScale(0.5, 0.7),

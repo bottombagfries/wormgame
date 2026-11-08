@@ -1,7 +1,7 @@
 --!strict
 -- Turns raw input into named actions from Config/Keybinds. Other controllers ask this module
 -- instead of reading keys themselves. Touch screens drive the same actions through press()/release()
--- (TouchController's buttons) and setVirtualMove() (its thumbstick, for the worm and ghosts).
+-- (TouchController's buttons); the worm and ghosts steer with Roblox's own touch stick (getRawMoveVector).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -27,7 +27,6 @@ InputController.letGoPressed = letGoPressed
 
 local held: { [string]: boolean } = {}
 local controls: any = nil -- the default PlayerModule's control module (keyboard, gamepad, touch)
-local virtualMove = Vector3.zero -- TouchController's thumbstick (X = right, Z = back)
 local lastTouchJump = 0
 
 local function matches(input: InputObject, action: string): boolean
@@ -89,12 +88,15 @@ function InputController.getMoveVector(): Vector3
 	return InputController.getRawMoveVector()
 end
 
--- Same shape as getMoveVector, but straight from the Move* keybinds (or the touch thumbstick). Works
--- without a character.
+-- Same shape as getMoveVector, but straight from the Move* keybinds, plus Roblox's touch stick on phones
+-- (TouchController keeps it showing for the worm and ghosts). Works without a character.
 function InputController.getRawMoveVector(): Vector3
 	local x = (if held.MoveRight then 1 else 0) - (if held.MoveLeft then 1 else 0)
 	local z = (if held.MoveBack then 1 else 0) - (if held.MoveForward then 1 else 0)
-	local vector = Vector3.new(x, 0, z) + virtualMove
+	local vector = Vector3.new(x, 0, z)
+	if controls and InputController.isTouch() then
+		vector += controls:GetMoveVector()
+	end
 	return if vector.Magnitude > 1 then vector.Unit else vector
 end
 
@@ -129,10 +131,6 @@ function InputController.toggle(action: string)
 	else
 		InputController.press(action)
 	end
-end
-
-function InputController.setVirtualMove(vector: Vector3)
-	virtualMove = vector
 end
 
 function InputController.init()

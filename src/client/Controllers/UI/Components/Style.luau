@@ -117,6 +117,32 @@ function Style.fitRow(
 end
 
 -- A ScreenGui set up the same way everywhere: safe-area insets, no reset on spawn.
+-- A full-screen, invisible frame under `gui` that shrinks on short (phone) screens toward `anchor` (e.g.
+-- (0, 0.5) = left middle), so what's parented to it keeps its place on screen but gets smaller
+-- (Theme.Sizes.PhoneReference / PhoneMinScale). Children keep their own UIScale for pops.
+function Style.phoneRoot(gui: ScreenGui, name: string, anchor: Vector2): Frame
+	local root = Instance.new("Frame")
+	root.Name = name
+	root.BackgroundTransparency = 1
+	root.AnchorPoint = anchor
+	root.Position = UDim2.fromScale(anchor.X, anchor.Y)
+	root.Size = UDim2.fromScale(1, 1)
+	root.Parent = gui
+	local scale = Instance.new("UIScale")
+	scale.Parent = root
+	local function fit()
+		local size = gui.AbsoluteSize
+		local short = math.min(size.X, size.Y)
+		if short > 0 then
+			local sizes = Theme.Sizes
+			scale.Scale = math.clamp(short / sizes.PhoneReference, sizes.PhoneMinScale, 1)
+		end
+	end
+	gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(fit)
+	fit()
+	return root
+end
+
 function Style.screen(name: string, displayOrder: number?): ScreenGui
 	local gui = Instance.new("ScreenGui")
 	gui.Name = name

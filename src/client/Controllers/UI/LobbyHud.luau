@@ -59,9 +59,13 @@ function LobbyHud.create(parent: Instance, callbacks: Callbacks): Hud
 	local colors = Theme.Colors
 	local gui = Style.screen("LobbyHud", 5)
 	gui.Enabled = false
+	-- Each group shrinks on phones toward the edge it sits on (Style.phoneRoot).
+	local top = Style.phoneRoot(gui, "Top", Vector2.new(0.5, 0))
+	local corner = Style.phoneRoot(gui, "BottomRight", Vector2.new(1, 1))
+	local side = Style.phoneRoot(gui, "Left", Vector2.new(0, 0.5))
 
 	-- Status strip --------------------------------------------------------------------------------
-	local strip = woodBox(gui, "Status", UDim2.fromScale(0.42, 0.075), UDim2.fromScale(0.5, 0.03), Vector2.new(0.5, 0))
+	local strip = woodBox(top, "Status", UDim2.fromScale(0.42, 0.075), UDim2.fromScale(0.5, 0.03), Vector2.new(0.5, 0))
 	minSize(strip.Parent :: Frame, 280, 44)
 	local status = Label.new(strip, {
 		name = "Text",
@@ -75,7 +79,7 @@ function LobbyHud.create(parent: Instance, callbacks: Callbacks): Hud
 	status.ZIndex = 4
 	local statusScale = Style.scaler(strip.Parent :: Frame)
 
-	local lastResult = Label.new(gui, {
+	local lastResult = Label.new(top, {
 		name = "LastResult",
 		font = Theme.Fonts.BodyBold,
 		color = colors.PaperLight,
@@ -85,7 +89,7 @@ function LobbyHud.create(parent: Instance, callbacks: Callbacks): Hud
 		maxTextSize = 20,
 		outline = true,
 	})
-	local difficulty = Button.new(gui, {
+	local difficulty = Button.new(top, {
 		name = "Difficulty",
 		text = "",
 		variant = "Paper",
@@ -103,7 +107,7 @@ function LobbyHud.create(parent: Instance, callbacks: Callbacks): Hud
 	cardRoot.Position = UDim2.fromScale(0.985, 0.97)
 	cardRoot.Size = UDim2.fromScale(0.18, 0.13)
 	cardRoot.ZIndex = 2
-	cardRoot.Parent = gui
+	cardRoot.Parent = corner
 	minSize(cardRoot, 150, 76)
 	local card = Style.shadowed(cardRoot, Theme.Corner.Panel)
 	card.BackgroundColor3 = colors.Paper
@@ -144,7 +148,7 @@ function LobbyHud.create(parent: Instance, callbacks: Callbacks): Hud
 	menu.AnchorPoint = Vector2.new(0, 0.5)
 	menu.Position = UDim2.fromScale(0.015, 0.55)
 	menu.Size = UDim2.fromScale(0.15, 0.46)
-	menu.Parent = gui
+	menu.Parent = side
 	minSize(menu, 130, 0)
 	local layout = Instance.new("UIListLayout")
 	layout.Padding = Theme.Padding.Gap

@@ -77,6 +77,12 @@ return {
 		TimeStep = 0.07, -- TUNE: seconds between dots
 		DotSize = 0.4, -- TUNE
 	},
+	-- Timed throws: while aiming with something in hand, a meter sweeps up and down; throwing uses its level.
+	ThrowMeter = {
+		CycleSeconds = 1.6, -- TUNE: empty -> full -> empty
+		MinPower = 0.25, -- TUNE: the weakest throw (fraction of ThrowPower), so a bad time still throws
+		SweetSpot = 0.9, -- TUNE: the meter turns its "great throw" color above this
+	},
 
 	-- Detection (§8.1)
 	PingSpeed = 1, -- TUNE: studs/s of horizontal movement on sand

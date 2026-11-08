@@ -16,9 +16,18 @@ function ThrowLogic.origin(rootPosition: Vector3, direction: Vector3, itemExtent
 	return rootPosition + Vector3.yAxis * PardnerConfig.ThrowOriginHeight + direction * forward
 end
 
--- power is 0..1; multiplier is for kit bonuses (Slingshot).
+-- power is the throw meter's level (ThrowMeter.MinPower..1); multiplier is for kit bonuses (Slingshot).
 function ThrowLogic.velocity(direction: Vector3, power: number, multiplier: number?): Vector3
-	return direction * (PardnerConfig.ThrowPower * math.clamp(power, 0, 1) * (multiplier or 1))
+	local clamped = math.clamp(power, PardnerConfig.ThrowMeter.MinPower, 1)
+	return direction * (PardnerConfig.ThrowPower * clamped * (multiplier or 1))
+end
+
+-- The throw meter's level `elapsed` seconds into aiming: rises from MinPower to 1, falls back, repeats.
+function ThrowLogic.meterPower(elapsed: number): number
+	local meter = PardnerConfig.ThrowMeter
+	local phase = (elapsed / meter.CycleSeconds) % 1
+	local level = 1 - math.abs(2 * phase - 1) -- 0 -> 1 -> 0
+	return meter.MinPower + (1 - meter.MinPower) * level
 end
 
 return ThrowLogic

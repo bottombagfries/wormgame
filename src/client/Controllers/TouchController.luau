@@ -2,12 +2,11 @@
 -- Phone / tablet controls (only when InputController.isTouch()). Shows the button set for what the player
 -- is right now — Pardner, Worm, Ghost or the mouth-escape minigame — and turns presses into the same named
 -- actions the keyboard produces, so every other controller works unchanged. Pardners walk and jump with
--- Roblox's own touch stick and jump button; the worm and ghosts get this module's thumbstick.
+-- Roblox's own touch stick and jump button; the worm and ghosts use that same stick (kept showing here).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 
 local Abilities = require(ReplicatedStorage.Shared.Config.Abilities)
 local InputController = require(script.Parent.InputController)
@@ -59,14 +58,16 @@ local LAYOUTS: { [Mode]: { Spec } } = {
 	},
 }
 
-local STICK_MODES: { [Mode]: boolean } = { Worm = true, Ghost = true }
+-- The worm and ghosts have no character, so Roblox hides its own touch stick for them; these modes keep it
+-- showing (and hide its jump button) and read it through InputController.getRawMoveVector().
+local ROBLOX_STICK_MODES: { [Mode]: boolean } = { Worm = true, Ghost = true }
+local TOUCH_GUI = "TouchGui" -- Roblox's touch controls ScreenGui in PlayerGui
+local JUMP_BUTTON = "JumpButton"
 
 local TouchController = {}
 
 local hud: TouchControls.Hud
 local mode: Mode = "None"
-local stickInput: InputObject? = nil
-local stickCenter = Vector2.zero
 
 local function currentMode(): Mode
 	if MinigameController.isActive() then
@@ -99,12 +100,6 @@ local function onUp(spec: Spec)
 	end
 end
 
-local function resetStick()
-	stickInput = nil
-	InputController.setVirtualMove(Vector3.zero)
-	hud.showStick(nil, nil)
-end
-
 local function setMode(newMode: Mode)
 	-- Let go of everything the old buttons were holding.
 	for _, spec in LAYOUTS[mode] do
@@ -112,8 +107,6 @@ local function setMode(newMode: Mode)
 	end
 	mode = newMode
 	hud.setButtons(LAYOUTS[newMode], onDown, onUp)
-	hud.setStickVisible(STICK_MODES[newMode] == true)
-	resetStick()
 
 	if newMode == "Worm" then
 		for _, action in { "WormAbility1", "WormAbility2" } do
@@ -127,12 +120,29 @@ local function setMode(newMode: Mode)
 	end
 end
 
--- Per frame: follow the mode, and show Throw only while aiming.
+-- Roblox's stick for characterless modes; its jump button stays hidden there (they have their own buttons).
+local function keepRobloxStick()
+	local touchGui = player.PlayerGui:FindFirstChild(TOUCH_GUI)
+	if not touchGui or not touchGui:IsA("ScreenGui") then
+		return
+	end
+	local characterless = ROBLOX_STICK_MODES[mode] == true
+	if characterless then
+		touchGui.Enabled = true
+	end
+	local jump = touchGui:FindFirstChild(JUMP_BUTTON, true)
+	if jump and jump:IsA("GuiObject") then
+		jump.Visible = not characterless
+	end
+end
+
+-- Per frame: follow the mode, keep Roblox's stick up for the worm/ghost, and show Throw only while aiming.
 local function update()
 	local wanted = currentMode()
 	if wanted ~= mode then
 		setMode(wanted)
 	end
+	keepRobloxStick()
 	if mode == "Pardner" then
 		local aiming = InputController.isAimHeld()
 		local throw = hud.getButton("Throw")
@@ -146,43 +156,11 @@ local function update()
 	end
 end
 
-local function onStickBegan(input: InputObject)
-	if input.UserInputType ~= Enum.UserInputType.Touch or stickInput then
-		return
-	end
-	stickInput = input
-	stickCenter = Vector2.new(input.Position.X, input.Position.Y)
-	hud.showStick(stickCenter, Vector2.zero)
-end
-
-local function onTouchMoved(input: InputObject)
-	if input ~= stickInput then
-		return
-	end
-	local radius = math.max(hud.stickRadius(), 1)
-	local delta = Vector2.new(input.Position.X, input.Position.Y) - stickCenter
-	if delta.Magnitude > radius then
-		delta = delta.Unit * radius
-	end
-	hud.showStick(stickCenter, delta)
-	-- Screen down = backwards (+Z), the same convention as the keyboard move vector.
-	InputController.setVirtualMove(Vector3.new(delta.X / radius, 0, delta.Y / radius))
-end
-
-local function onTouchEnded(input: InputObject)
-	if input == stickInput then
-		resetStick()
-	end
-end
-
 function TouchController.start()
 	if not InputController.isTouch() then
 		return
 	end
 	hud = TouchControls.create(player:WaitForChild("PlayerGui"))
-	hud.stickZone.InputBegan:Connect(onStickBegan)
-	UserInputService.TouchMoved:Connect(onTouchMoved)
-	UserInputService.TouchEnded:Connect(onTouchEnded)
 	RunService.RenderStepped:Connect(update)
 end
 

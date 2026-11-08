@@ -21,6 +21,7 @@ local InputController = require(script.Parent.InputController)
 local MatchController = require(script.Parent.MatchController)
 local ToastController = require(script.Parent.ToastController)
 local InventoryHud = require(script.Parent.UI.InventoryHud)
+local ThrowMeter = require(script.Parent.UI.ThrowMeter)
 
 local Tags = TagDefs.Tags
 local Arc = PardnerConfig.ThrowArc
@@ -36,6 +37,9 @@ local state: Types.InventoryState = { bag = {}, capacity = PardnerConfig.BagSlot
 local hovered: Model? = nil
 local digging = false
 local hud: InventoryHud.Hud
+local meter: ThrowMeter.Meter
+local aimStartedAt: number? = nil -- when the current aim (with something in hand) began, for the meter
+local throwPower = 1
 local highlight: Highlight
 local arcDots: { Part } = {}
 
@@ -140,11 +144,11 @@ local function hideArc()
 end
 
 -- Dots along the path the held item will take, up to the first thing it hits.
-local function updateArc(camera: Camera, root: BasePart, handModel: Model)
+local function updateArc(camera: Camera, root: BasePart, handModel: Model, power: number)
 	local direction = ThrowLogic.direction(camera.CFrame.LookVector)
 	local origin = ThrowLogic.origin(root.Position, direction, handModel:GetExtentsSize())
 	local kitDef = if state.kit then Kits[state.kit] else nil
-	local velocity = ThrowLogic.velocity(direction, 1, kitDef and kitDef.params.PassiveThrowPowerMult or 1)
+	local velocity = ThrowLogic.velocity(direction, power, kitDef and kitDef.params.PassiveThrowPowerMult or 1)
 	local gravity = Vector3.new(0, -Workspace.Gravity, 0)
 
 	local previous = origin
@@ -187,6 +191,8 @@ local function update()
 		highlight.Adornee = nil
 		hud.setHover(nil, "")
 		hideArc()
+		aimStartedAt = nil
+		meter.setVisible(false)
 		return
 	end
 
@@ -199,10 +205,17 @@ local function update()
 		hud.setHover(nil, "")
 	end
 
+	-- Aiming with something in hand: the power meter sweeps and the arc shows where this power lands.
 	local handModel = state.handModel
 	if CameraController.isAiming() and handModel and handModel.Parent then
-		updateArc(camera, root, handModel)
+		aimStartedAt = aimStartedAt or os.clock()
+		throwPower = ThrowLogic.meterPower(os.clock() - aimStartedAt)
+		meter.set(throwPower)
+		meter.setVisible(true)
+		updateArc(camera, root, handModel, throwPower)
 	else
+		aimStartedAt = nil
+		meter.setVisible(false)
 		hideArc()
 	end
 end
@@ -240,7 +253,9 @@ local function onAction(action: string)
 	elseif action == "Throw" then
 		local camera = Workspace.CurrentCamera
 		if camera and state.hand and CameraController.isAiming() then
-			Net.event("Request_Throw"):FireServer(ThrowLogic.direction(camera.CFrame.LookVector), 1)
+			Net.event("Request_Throw"):FireServer(ThrowLogic.direction(camera.CFrame.LookVector), throwPower)
+			meter.pulse()
+			aimStartedAt = nil -- the next item starts a fresh sweep
 		end
 	elseif string.sub(action, 1, #BAG_ACTION_PREFIX) == BAG_ACTION_PREFIX then
 		local slot = tonumber(string.sub(action, #BAG_ACTION_PREFIX + 1))
@@ -293,6 +308,7 @@ function InventoryController.init()
 		table.insert(arcDots, dot)
 	end
 
+	meter = ThrowMeter.create(player:WaitForChild("PlayerGui"))
 	hud = InventoryHud.create(player:WaitForChild("PlayerGui"), function(index: number)
 		local action = `{BAG_ACTION_PREFIX}{index}`
 		InputController.press(action)
