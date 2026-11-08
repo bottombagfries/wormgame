@@ -41,6 +41,9 @@ local WormHud = {}
 function WormHud.create(parent: Instance): Hud
 	local colors = Theme.Colors
 	local gui = Style.screen("WormHud", 2)
+	-- Phones: each group shrinks toward the edge it sits on (Style.phoneRoot).
+	local bottomLeft = Style.phoneRoot(gui, "BottomLeft", Vector2.new(0, 1))
+	local bottom = Style.phoneRoot(gui, "Bottom", Vector2.new(0.5, 1))
 	gui.Enabled = false
 
 	-- Status card --------------------------------------------------------------------------------
@@ -50,7 +53,7 @@ function WormHud.create(parent: Instance): Hud
 	root.Position = WIDE_POSITION
 	root.Size = UDim2.fromScale(0.26, 0.15)
 	root.ZIndex = 2
-	root.Parent = gui
+	root.Parent = bottomLeft
 	local limits = Instance.new("UISizeConstraint")
 	limits.MinSize = Vector2.new(210, 96)
 	limits.MaxSize = Vector2.new(400, 160)
@@ -95,7 +98,7 @@ function WormHud.create(parent: Instance): Hud
 	row.Position = UDim2.fromScale(0.5, 0.975)
 	row.Size = UDim2.fromScale(0.96, 0.085)
 	row.BackgroundTransparency = 1
-	row.Parent = gui
+	row.Parent = bottom
 	local layout = Instance.new("UIListLayout")
 	layout.FillDirection = Enum.FillDirection.Horizontal
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
@@ -103,7 +106,7 @@ function WormHud.create(parent: Instance): Hud
 	layout.Padding = UDim.new(0, ROW_GAP)
 	layout.Parent = row
 
-	local controls = Label.new(gui, {
+	local controls = Label.new(bottom, {
 		name = "Controls",
 		font = Theme.Fonts.BodyBold,
 		color = colors.PaperLight,

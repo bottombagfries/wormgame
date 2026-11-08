@@ -26,6 +26,9 @@ local ObjectivesHud = {}
 function ObjectivesHud.create(parent: Instance): Hud
 	local colors = Theme.Colors
 	local gui = Style.screen("ObjectivesHud", 2)
+	-- Phones: each group shrinks toward the edge it sits on (Style.phoneRoot).
+	local topRight = Style.phoneRoot(gui, "TopRight", Vector2.new(1, 0))
+	local top = Style.phoneRoot(gui, "Top", Vector2.new(0.5, 0))
 
 	-- Objectives card --------------------------------------------------------------------------------
 	local root = Instance.new("Frame")
@@ -35,7 +38,7 @@ function ObjectivesHud.create(parent: Instance): Hud
 	root.Size = UDim2.fromScale(0.25, 0)
 	root.AutomaticSize = Enum.AutomaticSize.Y
 	root.BackgroundTransparency = 1
-	root.Parent = gui
+	root.Parent = topRight
 	local limits = Instance.new("UISizeConstraint")
 	limits.MinSize = Vector2.new(200, 0)
 	limits.MaxSize = Vector2.new(360, math.huge)
@@ -82,7 +85,7 @@ function ObjectivesHud.create(parent: Instance): Hud
 	chip.Size = UDim2.fromScale(0.16, 0.06)
 	chip.BackgroundColor3 = colors.Wood
 	chip.ZIndex = 2
-	chip.Parent = gui
+	chip.Parent = top
 	local chipLimits = Instance.new("UISizeConstraint")
 	chipLimits.MinSize = Vector2.new(120, 36)
 	chipLimits.Parent = chip

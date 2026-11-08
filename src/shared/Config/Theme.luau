@@ -102,8 +102,8 @@ Theme.Sizes = {
 	CompactWidth = 760, -- px: narrower screens stack the vitals card above the bottom-center row
 	-- Phones: lobby panels and windows shrink when the screen's short side is below PhoneReference px
 	-- (scale = shortSide / PhoneReference, never below PhoneMinScale). Desktop screens stay at 1.
-	PhoneReference = 600,
-	PhoneMinScale = 0.6,
+	PhoneReference = 720,
+	PhoneMinScale = 0.5,
 }
 
 Theme.Tween = {

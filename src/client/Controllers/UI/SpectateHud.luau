@@ -26,6 +26,8 @@ local SpectateHud = {}
 function SpectateHud.create(parent: Instance, callbacks: Callbacks): Hud
 	local colors = Theme.Colors
 	local gui = Style.screen("SpectateHud", 6)
+	-- Phones: each group shrinks toward the edge it sits on (Style.phoneRoot).
+	local bottom = Style.phoneRoot(gui, "Bottom", Vector2.new(0.5, 1))
 	gui.Enabled = false
 
 	local root = Instance.new("Frame")
@@ -34,7 +36,7 @@ function SpectateHud.create(parent: Instance, callbacks: Callbacks): Hud
 	root.Position = UDim2.fromScale(0.5, 0.96)
 	root.Size = UDim2.fromScale(0.5, 0.12)
 	root.ZIndex = 2
-	root.Parent = gui
+	root.Parent = bottom
 	local limits = Instance.new("UISizeConstraint")
 	limits.MinSize = Vector2.new(330, 80)
 	limits.Parent = root
@@ -102,7 +104,7 @@ function SpectateHud.create(parent: Instance, callbacks: Callbacks): Hud
 		anchor = Vector2.new(1, 0.5),
 		onClick = callbacks.onNext,
 	})
-	local stop = Button.new(gui, {
+	local stop = Button.new(bottom, {
 		text = "STOP",
 		variant = "Danger",
 		size = UDim2.fromScale(0.1, 0.05),

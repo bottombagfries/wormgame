@@ -29,6 +29,9 @@ local PardnerHud = {}
 function PardnerHud.create(parent: Instance): Hud
 	local colors = Theme.Colors
 	local gui = Style.screen("PardnerHud", 2)
+	-- Phones: each group shrinks toward the edge it sits on (Style.phoneRoot).
+	local bottomLeft = Style.phoneRoot(gui, "BottomLeft", Vector2.new(0, 1))
+	local top = Style.phoneRoot(gui, "Top", Vector2.new(0.5, 0))
 
 	local root = Instance.new("Frame")
 	root.Name = "Vitals"
@@ -36,7 +39,7 @@ function PardnerHud.create(parent: Instance): Hud
 	root.Position = WIDE_POSITION
 	root.Size = UDim2.fromScale(0.24, 0.15)
 	root.ZIndex = 2
-	root.Parent = gui
+	root.Parent = bottomLeft
 	local limits = Instance.new("UISizeConstraint")
 	limits.MinSize = Vector2.new(200, 90)
 	limits.MaxSize = Vector2.new(380, 150)
@@ -75,7 +78,7 @@ function PardnerHud.create(parent: Instance): Hud
 	compass.Size = UDim2.fromScale(0.07, 0.05)
 	compass.BackgroundColor3 = colors.WoodDark
 	compass.Visible = false
-	compass.Parent = gui
+	compass.Parent = top
 	local compassLimits = Instance.new("UISizeConstraint")
 	compassLimits.MinSize = Vector2.new(64, 32)
 	compassLimits.Parent = compass

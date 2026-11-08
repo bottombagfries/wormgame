@@ -70,6 +70,8 @@ function InventoryHud.create(parent: Instance, onBagSlot: (index: number) -> (),
 	local emptyHint = if touch then TOUCH_EMPTY_HINT else EMPTY_HINT
 	local colors = Theme.Colors
 	local gui = Style.screen("InventoryHud", 2)
+	-- Phones: each group shrinks toward the edge it sits on (Style.phoneRoot).
+	local bottom = Style.phoneRoot(gui, "Bottom", Vector2.new(0.5, 1))
 
 	local row = Instance.new("Frame")
 	row.Name = "Row"
@@ -77,7 +79,7 @@ function InventoryHud.create(parent: Instance, onBagSlot: (index: number) -> (),
 	row.Position = UDim2.fromScale(0.5, ROW_Y)
 	row.Size = UDim2.fromScale(0.7, ROW_HEIGHT)
 	row.BackgroundTransparency = 1
-	row.Parent = gui
+	row.Parent = bottom
 	local layout = Instance.new("UIListLayout")
 	layout.FillDirection = Enum.FillDirection.Horizontal
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center

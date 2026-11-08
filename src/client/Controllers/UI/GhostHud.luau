@@ -22,6 +22,8 @@ local GhostHud = {}
 function GhostHud.create(parent: Instance): Hud
 	local colors = Theme.Colors
 	local gui = Style.screen("GhostHud", 2)
+	-- Phones: each group shrinks toward the edge it sits on (Style.phoneRoot).
+	local bottom = Style.phoneRoot(gui, "Bottom", Vector2.new(0.5, 1))
 	gui.Enabled = false
 
 	local root = Instance.new("Frame")
@@ -30,7 +32,7 @@ function GhostHud.create(parent: Instance): Hud
 	root.Position = UDim2.fromScale(0.5, 0.975)
 	root.Size = UDim2.fromScale(0.46, 0.13)
 	root.ZIndex = 2
-	root.Parent = gui
+	root.Parent = bottom
 	local limits = Instance.new("UISizeConstraint")
 	limits.MinSize = Vector2.new(300, 84)
 	limits.MaxSize = Vector2.new(640, 130)
