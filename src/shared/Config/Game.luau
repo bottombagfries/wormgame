@@ -36,7 +36,7 @@ return {
 
 	-- Sundown (§5.4)
 	Sundown = {
-		Enabled = false,
+		Enabled = true,
 		Seconds = 15 * 60,
 		MinSeconds = 5 * 60,
 		MaxSeconds = 40 * 60,
@@ -88,7 +88,7 @@ return {
 	},
 
 	Debug = {
-		Enabled = true,
+		Enabled = false,
 		ShowUiSample = false, -- Phase 13: show the UI style sample screen on join
 		UnlockAllCosmetics = true, -- Studio only: every game pass counts as owned (test skins before the passes exist)
 		ShowMarkers = true, -- label every map marker
