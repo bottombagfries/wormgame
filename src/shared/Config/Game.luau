@@ -98,6 +98,7 @@ return {
 		ForceTouchControls = false, -- show the phone buttons with a mouse (or use Studio's device emulator)
 		AllowSoloMatch = true, -- a match can start with one player (a Pardner, no Worm)
 		NoWorm = false, -- everyone is a Pardner (for testing death and revive with two players)
+		SoloWorm = false, -- a solo match makes you the Worm (and doesn't end for lack of Pardners)
 		SpawnTestItems = true, -- a row of greybox items by the spawn
 		TestItems = {
 			"SmallCoal",
@@ -159,6 +160,8 @@ return {
 		CenterClearRadius = 90, -- ...and this far from the train
 		MinSeparation = 45, -- between scattered structure markers
 		CactusSeparation = 12,
+		RockSeparation = 55, -- rock formations from everything else (ridges run up to ~70 studs)
+		RockTrackClearance = 45, -- ...and this far from the train track (it runs along X)
 		ScatterAttempts = 30,
 
 		TrackHalfLength = 420, -- track runs along X through the TrainSpot
@@ -186,6 +189,7 @@ return {
 			StagecoachSpot = 5,
 			SignalFireSpot = 10,
 			CactusSpot = 60,
+			RockSpot = 26,
 		},
 	},
 

@@ -470,6 +470,11 @@ local function step(dt: number)
 		if not head.Parent then
 			continue
 		end
+		-- Welding a swallowed item (or a grabbed Pardner) to the head can hand its physics back to the
+		-- server, which leaves the worm unable to move (stuck on rooftops / in houses). Keep it on its player.
+		if head:GetNetworkOwner() ~= worm.player then
+			pcall(head.SetNetworkOwner, head, worm.player)
+		end
 		local position = head.Position
 		if worm.mode == "Airborne" then
 			updateAirborne(worm, position)

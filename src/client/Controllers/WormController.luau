@@ -173,7 +173,8 @@ local function isBlocked(position: Vector3, direction: Vector3, radius: number):
 	end
 	wallParams.FilterDescendantsInstances = ignore
 	local result = Workspace:Raycast(position, direction * (radius + WormConfig.WallProbe), wallParams)
-	if not result then
+	-- A slope (roof, rock, ramp) can be crawled up; only steep faces block.
+	if not result or result.Normal.Y > WormConfig.MaxCrawlSlopeNormalY then
 		return false
 	end
 	local model = result.Instance:FindFirstAncestorOfClass("Model")

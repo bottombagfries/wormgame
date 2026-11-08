@@ -18,6 +18,7 @@ local Tags = {
 	DigArea = "DigArea",
 	LooseItemArea = "LooseItemArea",
 	CactusSpot = "CactusSpot",
+	RockSpot = "RockSpot", -- optional: rock formations (the marker's yaw sets their direction)
 	MapBounds = "MapBounds", -- optional: one box volume = the playable area; canyon cliffs ring it
 
 	-- Runtime

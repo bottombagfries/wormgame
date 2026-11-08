@@ -46,6 +46,14 @@ Rewrite this file at the end of every phase (CLAUDE.md §17).
     virtual stick, nearest-item pickup on touch, tappable bag slots. `Debug.ForceTouchControls`.
   - `Debug.Enabled = false`. Store thumbnails in `marketing/thumbnails/` (1920×1080, staged in Studio).
   - Dropped from that checkout (this version already had better ones): its lobby, coin store, hats, models.
+- **Playtest fixes 2026-11-07:** Workspace StreamingEnabled off (worm stuck in lobby); timed throw meter
+  (`UI/ThrowMeter`, `Pardner.ThrowMeter`); phone UI scaling (`Style.phoneRoot`, `Theme.Sizes.Phone*`);
+  dynamic touch stick for worm/ghosts. Furnace: "Add fuel" prompt burns hand + bag fuel
+  (`ItemService.takeFuel`), fire + glow. Worm stuck after pouncing into houses: welding swallowed loot
+  handed the head's physics to the server — WormService re-asserts network ownership every frame; slopes
+  no longer block crawling (`Worm.MaxCrawlSlopeNormalY`). Rocks: `Map/Rocks` builds Ridge / Mesa / Arch /
+  Slab / Stones on optional `RockSpot` markers (greybox map scatters 26), registered as "Rock"
+  structures (dynamite only); `Assets/Structures/Rock<Kind>` replaces a shape. `Debug.SoloWorm` = solo as Worm.
 - Deferred by the spec ("Later"): wormlings.
 
 ## What each file does (Phase 13 additions; older files are described in their header comments)
@@ -101,8 +109,8 @@ Earlier (still true)
   spectate, weights over several rounds, kill feed from a real grab); Phase 11 abilities; balloon escape.
 - Studio's play viewport during the MCP checks was portrait (296–540 px wide), narrower than real phones
   (landscape). Layouts were fixed for it, but check the Device emulator at a landscape phone and 1080p.
-- No particles/animations yet; lobby music id is empty (match music = desert wind).
-- Worm skins in a real round need a 2P test (solo can't be the Worm).
+- No particles/animations yet.
+- Worm skins in a real round need a 2P test (or `Debug.SoloWorm`).
 - Saving only works in a published place or with Studio API access on; untested against a live DataStore.
 - Touch controls checked with `ForceTouchControls` in Studio only, not on a phone.
 - Results match the local player by DisplayName. Each OpenSafe adds a `Request_SafeCode` limiter (tiny leak).

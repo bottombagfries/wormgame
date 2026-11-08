@@ -141,6 +141,12 @@ function GreyboxMap.build(mapFolder: Instance)
 			makeMarker(markers, entry.tag, CFrame.new(point) * randomYaw(rng))
 		end
 	end
+	-- Rocks before cacti, so they get the roomier spots (ridges are long).
+	for _, point in scatter(rng, counts.RockSpot, placed, MAP.RockSeparation) do
+		if math.abs(point.Z) >= MAP.RockTrackClearance then
+			makeMarker(markers, Tags.RockSpot, CFrame.new(point) * randomYaw(rng))
+		end
+	end
 	for _, point in scatter(rng, counts.CactusSpot, placed, MAP.CactusSeparation) do
 		makeMarker(markers, Tags.CactusSpot, CFrame.new(point) * randomYaw(rng))
 	end

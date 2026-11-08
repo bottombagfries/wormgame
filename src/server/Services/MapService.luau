@@ -29,6 +29,7 @@ local Chests = require(script.Parent.Parent.Map.Chests)
 local GreyboxMap = require(script.Parent.Parent.Map.GreyboxMap)
 local Lobby = require(script.Parent.Parent.Map.Lobby)
 local Quarry = require(script.Parent.Parent.Map.Quarry)
+local Rocks = require(script.Parent.Parent.Map.Rocks)
 local StructureBuilder = require(script.Parent.Parent.Map.StructureBuilder)
 local VendingMachine = require(script.Parent.Parent.Map.VendingMachine)
 local Well = require(script.Parent.Parent.Map.Well)
@@ -278,6 +279,17 @@ local function spawnCacti(rng: Random)
 	end
 end
 
+-- Rock formations (Map/Rocks) on RockSpot markers. Optional: a map with none just has no rocks.
+-- Dynamite breaks them; the worm can't.
+local function spawnRocks(rng: Random)
+	for _, marker in MapService.getMarkers(Tags.RockSpot) do
+		local model = Rocks.build(Rocks.pickKind(rng), marker.CFrame, rng)
+		model.Parent = runtime
+		StructureService.register(model, "Rock")
+		count(model.Name)
+	end
+end
+
 -- A random spot on open sand inside one of the LooseItemArea volumes, or nil.
 local function looseSpot(areas: { BasePart }, rng: Random): Vector3?
 	for _ = 1, Structures.Placement.Attempts do
@@ -385,6 +397,7 @@ function MapService.populate(_settings: Types.MatchSettings)
 	count("Quarry")
 	spawnLookouts(rng)
 	spawnCacti(rng)
+	spawnRocks(rng)
 	spawnLooseLoot(rng)
 	count("Chest", Chests.spawnPlanned(folder, rng))
 

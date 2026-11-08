@@ -19,6 +19,7 @@ return {
 	MaxVerticalSpeed = 60, -- TUNE
 	EdgeLookahead = 0.25, -- TUNE: seconds ahead the client checks for the end of the sand
 	WallProbe = 3, -- TUNE: studs beyond the head's surface that block crawling above ground
+	MaxCrawlSlopeNormalY = 0.45, -- TUNE: surfaces whose normal points up more than this are slopes, not walls
 	MaxForce = 1e7, -- TUNE
 	SpawnRadius = 220, -- TUNE: worms start this far from the TrainSpot
 	SpawnAttempts = 12,

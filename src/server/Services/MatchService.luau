@@ -109,6 +109,9 @@ local function wormSlots(playerCount: number): number
 	if Debug.Enabled and Debug.NoWorm then
 		return 0
 	end
+	if Debug.Enabled and Debug.SoloWorm and playerCount == 1 then
+		return 1
+	end
 	return math.max(0, math.min(GameConfig.WormCount, playerCount - 1))
 end
 
@@ -466,7 +469,7 @@ local function runPlaying(): Types.MatchResult
 		end
 
 		-- No Pardner left alive (or in the game): nobody can carry a heart jar, so the Worm wins (§5.1).
-		if PardnerService.getAliveCount() == 0 then
+		if PardnerService.getAliveCount() == 0 and not (Debug.Enabled and Debug.SoloWorm) then
 			return finishResult("Worm", {}, playersWithRole("Pardner"), startedAt)
 		end
 

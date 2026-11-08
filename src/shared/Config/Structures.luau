@@ -11,6 +11,7 @@ local Defs: { [string]: Types.StructureDef } = {
 	Watertower = { id = "Watertower", hp = 4, scrap = 1, wormDamageable = true },
 	Traincar = { id = "Traincar", hp = 1, scrap = 3, wormDamageable = false }, -- dynamite only
 	Cactus = { id = "Cactus", hp = 1, scrap = 0, wormDamageable = true }, -- TUNE
+	Rock = { id = "Rock", hp = 1, scrap = 0, wormDamageable = false }, -- dynamite only (§6.7)
 	Train = { id = "Train", scrap = 0, wormDamageable = false },
 }
 
@@ -124,6 +125,31 @@ return {
 	Chest = {
 		HoldSeconds = 1, -- TUNE: hold the prompt this long to open
 		DropGap = 3, -- TUNE: contents appear this far in front of the chest
+	},
+
+	-- Rock formations on RockSpot markers (Map/Rocks): somewhere off the sand for Pardners to stand, hide
+	-- and travel on. A model in Assets/Structures named Rock<Kind> (e.g. RockRidge) replaces the built
+	-- shape. Kinds are picked by weight. All sizes in studs, TUNE.
+	Rocks = {
+		Weights = { Ridge = 4, Mesa = 2, Arch = 1, Slab = 2, Stones = 2 },
+		Colors = {
+			Color3.fromRGB(176, 112, 76),
+			Color3.fromRGB(158, 96, 66),
+			Color3.fromRGB(190, 140, 100),
+			Color3.fromRGB(140, 104, 84),
+		},
+		Materials = { Enum.Material.Rock, Enum.Material.Sandstone, Enum.Material.Slate },
+		-- Long, low spine of overlapping blocks with ramps at both ends: a sand-free path.
+		Ridge = { Length = { 36, 70 }, Width = { 7, 11 }, Height = { 4, 9 }, Pieces = { 3, 6 }, Bend = 0.35 },
+		-- Wide flat top with a ramp up one side.
+		Mesa = { Width = { 16, 24 }, Height = { 9, 14 }, RampLength = 14 },
+		-- Two pillars and a slab across the top.
+		Arch = { Span = { 16, 26 }, Height = { 13, 18 }, Pillar = { 6, 8 }, Thickness = 4 },
+		-- A big tilted slab: walk up it to a lookout edge.
+		Slab = { Length = { 24, 34 }, Width = { 10, 14 }, Rise = { 7, 12 }, Thickness = 3 },
+		-- A curving line of flat-topped stones to hop across.
+		Stones = { Count = { 4, 7 }, Size = { 4, 7 }, Height = { 2.5, 5 }, Gap = { 5, 7 }, Bend = 0.4 },
+		SinkDepth = 1, -- pieces start this far under the sand so no gap shows
 	},
 
 	Placement = {
